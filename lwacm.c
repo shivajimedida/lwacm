@@ -20,27 +20,24 @@ int x = 0;
 int y = 0;
 int z = 0;
 
-
-const float omega = 1.5;
+const double omega = 1.5;
 
 // array to store value of p
-float p_store[N_X][N_Y][N_Z];
-
+double p_store[N_X][N_Y][N_Z];
 
 // array to store value u
 //    | x | y | z |u_xyz
-float u[10][10][10][3];
-
+double u[10][10][10][3];
 
 // array to store f, f(e), and f(e,o)
-float f[19]     = { 0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0 };
-float f_e[19]   = { 0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0 };
-float f_e_o[19] = { 0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0 };
+double f[19]     = { 0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0 };
+double f_e[19]   = { 0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0 };
+double f_e_o[19] = { 0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0 };
 
 // u square
-float u_square( int x, int y, int z )
+double u_square( int x, int y, int z )
 {
-    float result = u[x][y][z][0]*u[x][y][z][0];
+    double result = u[x][y][z][0]*u[x][y][z][0];
     result += u[x][y][z][1]*u[x][y][z][1];
     result += u[x][y][z][2]*u[x][y][z][2];
     
@@ -48,7 +45,7 @@ float u_square( int x, int y, int z )
 }
 
 // multiply funtion for u and xi stencil
-float u_x_xi( int x, int y, int z, int alpha )
+double u_x_xi( int x, int y, int z, int alpha )
 {
     int xix = 0;
     int xiy = 0;
@@ -87,7 +84,7 @@ float u_x_xi( int x, int y, int z, int alpha )
 }
 
 // compute new u for coordinate x,y,z
-void compute_u( int x, int y, int z, float p)
+void compute_u( int x, int y, int z, double p)
 {    
     u[x][y][z][0] = ( f[1]-f[2]+f[7]-f[8]+f[9]-f[10]+f[11]-f[12]+f[13]-f[14] )/p;
     u[x][y][z][1] = ( f[3]-f[4]+f[7]+f[8]-f[9]-f[10]+f[15]-f[16]+f[17]-f[18] )/p;
@@ -95,10 +92,10 @@ void compute_u( int x, int y, int z, float p)
 }
 
 // compute new rho()
-float compute_p()
+double compute_p()
 {    
     int i = 0;
-    float result = 0;
+    double result = 0;
     
     // sum up all the f(a)
     for( i = 0; i < 19; i++)
@@ -109,10 +106,8 @@ float compute_p()
     return result;
 }
 
-
-
 // function of w(alpha)
-float w(int alpha)
+double w(int alpha)
 {
     if( 0 == alpha ) { return 1.0/3.0; }
     
@@ -131,19 +126,28 @@ int main()
 {
     printf("\nprogram start\n");
     
-    // initial value of p
-    p_store[0][0][0] = 1.0f;
+    int i = 0;
     
-    // initial value of u
-    u[0][0][0][0] = 0;
-    u[0][0][0][1] = 0;
-    u[0][0][0][2] = 0;
+    // initialize p and u
+    for( x = 0; x < N_X; x++)
+    {
+      for( y = 0; y < N_Y; y++)
+      {
+        for( z = 0; z < N_Z; z++)
+        {
+            p_store[x][y][z] = 1.0f; // set it to 1.0
+            
+            u[x][y][z][0] = 0;
+            u[x][y][z][1] = 0;
+            u[x][y][z][2] = 0;
+        }
+      }
+    }
     
-    float u_temp = 0;
-    float u_2_temp = 0;
-    
-    float f_x_t = 0;
-    
+    // temperary variable for calculation
+    double u_temp = 0;
+    double u_2_temp = 0;
+    double f_x_t = 0;
     
     // for all time step t
     for( t = 0; t < T_MAX; t++)
@@ -164,6 +168,8 @@ int main()
                     // load p and u
                     
                     u_temp = u_x_xi( x, y, z, alpha );    // u times xi(alpha)
+                    //printf("u_temp = %f \n", u_temp);
+                    
                     u_2_temp = u_square( x, y, z );       // u square
                     
                     // step 5, compute f(e)(x-xi, t)
@@ -195,11 +201,17 @@ int main()
                 
                 // step 13, store p(x, t+1) and u(x, t+1)
                 
-                printf("x = %d, y = %d, z = %d \n", x, y, z );
+                //printf("x = %d, y = %d, z = %d \n", x, y, z );
                  
             }
           }
         }
+        
+        for( i = 0; i < 19; i++)
+        {
+            printf("f(%d) = %e \n", i, f[i] );
+        }
+        
     }
     
     return 0;

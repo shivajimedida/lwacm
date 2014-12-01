@@ -10,4 +10,4 @@ lwacm: lwacm.c
 	$(CC) lwacm.c -o lwacm  $(C_FLAG)
 
 clean:
-	rm -rf lwacm lwacm.c~ makefile~
+	rm -rf lwacm lwacm.c~ makefile~ README.md~ test test.c~ 
