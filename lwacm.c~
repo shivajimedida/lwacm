@@ -191,7 +191,7 @@ int main()
                 p_store[x][y][z] = compute_p();
                 
                 // step 12, compute u(x, t+1)
-                compute_u(x, y, z, p_store[x][y][z]);
+                compute_u(x, y, z, p_store[x][y][z])
                 
                 // step 13, store p(x, t+1) and u(x, t+1)
                 
