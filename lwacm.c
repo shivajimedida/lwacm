@@ -1,12 +1,37 @@
 /*
  *  Link-wise Artificial Compressibility Method
  *  by Yifan Yang with supervisor Thomas Zeiser @ FAU
- *                                         01.12.2014
+ *                                             01.12.2014
+ *   xi velocities in D3Q19 stencil, 19 total
+ *   
+ *   xi(0)  {  0,  0,  0, }
+ *   
+ *   xi(1)  {  1,  0,  0, }
+ *   xi(2)  { -1,  0,  0, }
+ *   xi(3)  {  0,  1,  0, }
+ *   xi(4)  {  0, -1,  0, }
+ *   xi(5)  {  0,  0,  1, }
+ *   xi(6)  {  0,  0, -1, }
+ *   
+ *   xi(7)  {  1,  1,  0, }
+ *   xi(8)  { -1,  1,  0, }
+ *   xi(9)  {  1, -1,  0, }
+ *   xi(10) { -1, -1,  0, }
+ *   
+ *   xi(11) {  1,  0,  1, }
+ *   xi(12) { -1,  0,  1, }
+ *   xi(13) {  1,  0, -1, }
+ *   xi(14) { -1,  0, -1, }
+ *   
+ *   xi(15) {  0,  1,  1, }
+ *   xi(16) {  0, -1,  1, }
+ *   xi(17) {  0,  1, -1, }
+ *   xi(18) {  0, -1, -1, }
  */
 
 #include <stdio.h>
 
-#define T_MAX     1000
+#define T_MAX     10
 #define N_X       10
 #define N_Y       10
 #define N_Z       10
@@ -14,9 +39,15 @@
 
 const double omega = 1.5;
 
+// time and index variables
+int t = 0;
+int x = 0;
+int y = 0;
+int z = 0;
+
 // array to store value of p, t=0 is t, t=1 is t+1 
-//            t | x  | y  |  z
-double p_store[2][N_X][N_Y][N_Z];
+//       t | x  | y  |  z
+double p[2][N_X][N_Y][N_Z];
 
 // array to store value u
 //     t| x | y | z |u_xyz, t=0 is t, t=1 is t+1
@@ -27,54 +58,23 @@ double f[19]     = { 0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0 };
 double f_e[19]   = { 0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0 };
 double f_e_o[19] = { 0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0 };
 
-// u square
-double u_square( int x, int y, int z )
+// temperary variable for calculation
+double u_xi = 0;   // u(x-xi) * xi
+double u_x_xi = 0;   // u(x) * xi
+double u_2 = 0;    // u square
+double f_x_t = 0;  // f(e, o)(x, t)
+
+// for load p and u in alpha callback function
+double p_load = 0;
+double u_load[3];
+
+
+// compute new rho()
+double compute_p()
 {
-    double result = u[0][x][y][z][0] * u[0][x][y][z][0];
-    result += u[0][x][y][z][1] * u[0][x][y][z][1];
-    result += u[0][x][y][z][2] * u[0][x][y][z][2];
-    
-    return  result;
+    return f[0]+f[1]+f[2]+f[3]+f[4]+f[5]+f[6]+f[7]+f[8]+f[9]+f[10]+f[11]+f[12]+f[13]+f[14]+f[15]+f[16]+f[17]+f[18];
 }
 
-// multiply funtion for u and xi stencil
-double u_x_xi( int x, int y, int z, int alpha )
-{
-    int xix = 0;
-    int xiy = 0;
-    int xiz = 0;
-    
-    if( 0 == alpha ) { xix = 0; xiy = 0; xiz = 0; }
-    
-    else if( 1 == alpha )  { xix =  1; xiy =  0; xiz =  0; }
-    else if( 2 == alpha )  { xix = -1; xiy =  0; xiz =  0; }
-    else if( 3 == alpha )  { xix =  0; xiy =  1; xiz =  0; }
-    else if( 4 == alpha )  { xix =  0; xiy = -1; xiz =  0; }
-    else if( 5 == alpha )  { xix =  0; xiy =  0; xiz =  1; }
-    else if( 6 == alpha )  { xix =  0; xiy =  0; xiz = -1; }
-    
-    else if( 7 == alpha )  { xix =  1; xiy =  1; xiz = 0; }
-    else if( 8 == alpha )  { xix = -1; xiy =  1; xiz = 0; }
-    else if( 9 == alpha )  { xix =  1; xiy = -1; xiz = 0; }
-    else if( 10 == alpha ) { xix = -1; xiy = -1; xiz = 0; }
-    
-    else if( 11 == alpha ) { xix =  1; xiy = 0; xiz =  1; }
-    else if( 12 == alpha ) { xix = -1; xiy = 0; xiz =  1; }
-    else if( 13 == alpha ) { xix =  1; xiy = 0; xiz = -1; }
-    else if( 14 == alpha ) { xix = -1; xiy = 0; xiz = -1; }
-    
-    else if( 15 == alpha ) { xix = 0; xiy =  1; xiz =  1; }
-    else if( 16 == alpha ) { xix = 0; xiy = -1; xiz =  1; }
-    else if( 17 == alpha ) { xix = 0; xiy =  1; xiz = -1; }
-    else if( 18 == alpha ) { xix = 0; xiy = -1; xiz = -1; }
-    
-    else
-    {
-        printf("illegal alpha !\n");
-    }
-    
-    return u[0][x][y][z][0]*xix + u[0][x][y][z][1]*xiy + u[0][x][y][z][2]*xiz;
-}
 
 // compute new u for coordinate x,y,z
 void compute_u( int x, int y, int z, double p)
@@ -84,66 +84,549 @@ void compute_u( int x, int y, int z, double p)
     u[1][x][y][z][2] = ( f[5]-f[6]+f[11]+f[12]-f[13]-f[14]+f[15]+f[16]-f[17]-f[18] )/p;
 }
 
-// compute new rho()
-double compute_p()
-{    
-    int i = 0;
-    double result = 0;
-    
-    // sum up all the f(a)
-    for( i = 0; i < 19; i++)
-    {
-        result += f[i];
-    }
-    
-    return result;
+
+// call back functions to calculate f for each alpha from 0 to 18
+void alpha_0_call()
+{      
+      // alpha = 0 calculate u * xi and u square  xi(0)  {  0,  0,  0, }
+            
+      //load p(x-xia) and u(x-xia)
+      p_load = p[0][x][y][z];
+             
+      u_load[0] = u[0][x][y][z][0];
+      u_load[1] = u[0][x][y][z][1];
+      u_load[2] = u[0][x][y][z][2];
+             
+      u_xi = 0;
+      u_2  = u_load[0] * u_load[0] + u_load[0] * u_load[0] + u_load[0] * u_load[0];
+      u_x_xi = 0;
+      
+      //  the follwoing code can be abbreviated
+      // step 5, compute f(e)(x-xi[0], t)   
+      f_e[0] = 1.0/3.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+      
+      // step 6, compute f(e, o)(x-xi[0], t)
+      f_e_o[0] = 3.0 * 1.0/3.0 * p_load * u_xi;  // Eq.10
+      
+      // step 8.5, compute f(e, o)(x, t)
+      f_x_t = 3.0 * 1.0/3.0 * p[0][x][y][z] * u_x_xi;
+      
+      // step 9
+      f[0] =  f_e[0] + 2*( omega-1/omega )*( f_x_t - f_e_o[0] ) ;  // Eq.11
 }
 
-// put the data in t+1 into t
-void store_p(int x, int y, int z )
+void alpha_1_call()
 {
-    p_store[0][x][y][z] = p_store[1][x][y][z];
+      // alpha = 1 calculate u * xi and u square  xi(1)  {  1,  0,  0, }
+      
+      //load p(x-xia) and u(x-xia)
+      p_load = p[0][x-1][y][z];
+      
+      u_load[0] = u[0][x-1][y][z][0];
+      u_load[1] = u[0][x-1][y][z][1];
+      u_load[2] = u[0][x-1][y][z][2];
+      
+      u_xi = u_load[0];
+      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+      u_x_xi = u[0][x][y][z][0];
+      
+      // step 5, compute f(e)(x-xi[0], t)
+      f_e[1] = 1.0/18.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+      
+      // step 6, compute f(e, o)(x-xi[0], t)
+      f_e_o[1] = 3.0 * 1.0/18.0 * p_load * u_xi;  // Eq.10
+      
+      // step 8.5, compute f(e, o)(x, t)
+      f_x_t = 3.0 * 1.0/18.0 * p[0][x][y][z] * u_x_xi;
+      
+      // step 9, compute f(x, t+1)
+      f[1] =  f_e[1] + 2*( omega-1/omega )*( f_x_t - f_e_o[1] ) ;  // Eq.11
 }
 
-// compute new u for coordinate x,y,z
-void store_u( int x, int y, int z )
-{    
-    u[0][x][y][z][0] = u[1][x][y][z][0];
-    u[0][x][y][z][1] = u[1][x][y][z][1];
-    u[0][x][y][z][2] = u[1][x][y][z][2];
-}
-
-
-// function of w(alpha)
-double w(int alpha)
+void alpha_2_call()
 {
-    if( 0 == alpha ) { return 1.0/3.0; }
-    
-    else if( (alpha >= 1)||(alpha <= 6) ) { return 1.0/18.0; }
-    
-    else if( (alpha >= 7)||(alpha <= 18) ) { return 1.0/36.0; }
-    
-    else
-    {
-        printf("invalid alpha !!\n");
-        return 0;
-    }
+      // alpha = 0 calculate u * xi and u square  xi(2)  { -1,  0,  0, }
+      
+      //load p(x-xia) and u(x-xia)
+      p_load = p[0][x-1][y][z];
+      
+      u_load[0] = u[0][x-1][y][z][0];
+      u_load[1] = u[0][x-1][y][z][1];
+      u_load[2] = u[0][x-1][y][z][2];
+      
+      u_xi = u_load[0]*(-1);
+      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+      u_x_xi = u[0][x][y][z][0] * (-1);
+      
+      // step 5, compute f(e)(x-xi[0], t)   
+      f_e[2] = 1.0/18.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+      
+      // step 6, compute f(e, o)(x-xi[0], t)
+      f_e_o[2] = 3.0 * 1.0/18.0 * p_load * u_xi;  // Eq.10
+      
+      // step 8.5, compute f(e, o)(x, t)
+      f_x_t = 3.0 * 1.0/18.0 * p[0][x][y][z] * u_x_xi;
+      
+      // step 9, compute f(x, t+1)
+      f[2] =  f_e[2] + 2*( omega-1/omega )*( f_x_t - f_e_o[2] ) ;  // Eq.11
 }
+
+void alpha_3_call()
+{
+      // alpha = 0 calculate u * xi and u square  xi(3)  {  0,  1,  0, }
+      
+      //load p(x-xia) and u(x-xia)
+      p_load = p[0][x][y-1][z];
+      
+      u_load[0] = u[0][x][y-1][z][0];
+      u_load[1] = u[0][x][y-1][z][1];
+      u_load[2] = u[0][x][y-1][z][2];
+      
+      u_xi = u_load[1];
+      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+      u_x_xi = u[0][x][y][z][1];
+      
+      // step 5, compute f(e)(x-xi[0], t)
+      f_e[3] = 1.0/18.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+      
+      // step 6, compute f(e, o)(x-xi[0], t)
+      f_e_o[3] = 3.0 * 1.0/18.0 * p_load * u_xi;  // Eq.10
+      
+      // step 8.5, compute f(e, o)(x, t)
+      f_x_t = 3.0 * 1.0/18.0 * p[0][x][y][z] * u_x_xi;
+      
+      // step 9, compute f(x, t+1)
+      f[3] =  f_e[3] + 2*( omega-1/omega )*( f_x_t - f_e_o[3] ) ;  // Eq.11
+}
+
+void alpha_4_call()
+{
+      // alpha = 0 calculate u * xi and u square  xi(4)  {  0, -1,  0, }
+      
+      //load p(x-xia) and u(x-xia)
+      p_load = p[0][x][y+1][z];
+      
+      u_load[0] = u[0][x][y+1][z][0];
+      u_load[1] = u[0][x][y+1][z][1];
+      u_load[2] = u[0][x][y+1][z][2];
+      
+      u_xi = u_load[1]*(-1);
+      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+      u_x_xi = u[0][x][y][z][1] * (-1);
+      
+      // step 5, compute f(e)(x-xi[0], t)   
+      f_e[4] = 1.0/18.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+      
+      // step 6, compute f(e, o)(x-xi[0], t)
+      f_e_o[4] = 3.0 * 1.0/18.0 * p_load * u_xi;  // Eq.10
+      
+      // step 8.5, compute f(e, o)(x, t)
+      f_x_t = 3.0 * 1.0/18.0 * p[0][x][y][z] * u_x_xi;
+      
+      // step 9, compute f(x, t+1)
+      f[4] =  f_e[4] + 2*( omega-1/omega )*( f_x_t - f_e_o[4] ) ;  // Eq.11
+}
+
+void alpha_5_call()
+{
+      // alpha = 0 calculate u * xi and u square  xi(5)  {  0,  0,  1, }
+            
+      //load p(x-xia) and u(x-xia)
+      p_load = p[0][x][y][z-1];
+      
+      u_load[0] = u[0][x][y][z-1][0];
+      u_load[1] = u[0][x][y][z-1][1];
+      u_load[2] = u[0][x][y][z-1][2];
+      
+      u_xi = u_load[2];
+      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+      u_x_xi = u[0][x][y][z][2];
+      
+      // step 5, compute f(e)(x-xi[0], t)
+      f_e[5] = 1.0/18.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+      
+      // step 6, compute f(e, o)(x-xi[0], t)
+      f_e_o[5] = 3.0 * 1.0/18.0 * p_load * u_xi;  // Eq.10
+      
+      // step 8.5, compute f(e, o)(x, t)
+      f_x_t = 3.0 * 1.0/18.0 * p[0][x][y][z] * u_x_xi;
+      
+      // step 9, compute f(x, t+1)
+      f[5] =  f_e[5] + 2*( omega-1/omega )*( f_x_t - f_e_o[5] ) ;  // Eq.11
+}
+
+void alpha_6_call()
+{
+      // alpha = 0 calculate u * xi and u square  xi(6)  {  0,  0, -1, }
+            
+      //load p(x-xia) and u(x-xia)
+      p_load = p[0][x][y][z+1];
+      
+      u_load[0] = u[0][x][y][z+1][0];
+      u_load[1] = u[0][x][y][z+1][1];
+      u_load[2] = u[0][x][y][z+1][2];
+      
+      u_xi = u_load[2]*(-1);
+      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+      u_x_xi = u[0][x][y][z][2] * (-1);
+      
+      // step 5, compute f(e)(x-xi[0], t)   
+      f_e[6] = 1.0/18.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+      
+      // step 6, compute f(e, o)(x-xi[0], t)
+      f_e_o[6] = 3.0 * 1.0/18.0 * p_load * u_xi;  // Eq.10
+      
+      // step 8.5, compute f(e, o)(x, t)
+      f_x_t = 3.0 * 1.0/18.0 * p[0][x][y][z] * u_x_xi;
+      
+      // step 9, compute f(x, t+1)
+      f[6] =  f_e[6] + 2*( omega-1/omega )*( f_x_t - f_e_o[6] ) ;  // Eq.11
+}
+
+void alpha_7_call()
+{
+      // alpha = 0 calculate u * xi and u square  xi(7)  {  1,  1,  0, }
+            
+      //load p(x-xia) and u(x-xia)
+      p_load = p[0][x-1][y-1][z];
+      
+      u_load[0] = u[0][x-1][y-1][z][0];
+      u_load[1] = u[0][x-1][y-1][z][1];
+      u_load[2] = u[0][x-1][y-1][z][2];
+      
+      u_xi = u_load[0] + u_load[1];
+      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+      u_x_xi = u[0][x][y][z][0] + u[0][x][y][z][1];
+      
+      // step 5, compute f(e)(x-xi[0], t)
+      f_e[7] = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+      
+      // step 6, compute f(e, o)(x-xi[0], t)
+      f_e_o[7] = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
+      
+      // step 8.5, compute f(e, o)(x, t)
+      f_x_t = 3.0 * 1.0/36.0 * p[0][x][y][z] * u_x_xi;
+      
+      // step 9, compute f(x, t+1)
+      f[7] =  f_e[7] + 2*( omega-1/omega )*( f_x_t - f_e_o[7] ) ;  // Eq.11
+}
+
+void alpha_8_call()
+{
+      // alpha = 0 calculate u * xi and u square  xi(8)  { -1,  1,  0, }
+            
+      //load p(x-xia) and u(x-xia)
+      p_load = p[0][x+1][y-1][z];
+      
+      u_load[0] = u[0][x+1][y-1][z][0];
+      u_load[1] = u[0][x+1][y-1][z][1];
+      u_load[2] = u[0][x+1][y-1][z][2];
+      
+      u_xi = u_load[0]*(-1) + u_load[1];
+      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+      u_x_xi = u[0][x][y][z][0] * (-1) + u[0][x][y][z][1];
+      
+      // step 5, compute f(e)(x-xi[0], t)   
+      f_e[8] = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+      
+      // step 6, compute f(e, o)(x-xi[0], t)
+      f_e_o[8] = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
+      
+      // step 8.5, compute f(e, o)(x, t)
+      f_x_t = 3.0 * 1.0/36.0 * p[0][x][y][z] * u_x_xi;
+      
+      // step 9, compute f(x, t+1)
+      f[8] =  f_e[8] + 2*( omega-1/omega )*( f_x_t - f_e_o[8] ) ;  // Eq.11
+}
+
+void alpha_9_call()
+{
+      // alpha = 0 calculate u * xi and u square  xi(9)  {  1, -1,  0, }
+            
+      //load p(x-xia) and u(x-xia)
+      p_load = p[0][x-1][y+1][z];
+      
+      u_load[0] = u[0][x-1][y+1][z][0];
+      u_load[1] = u[0][x-1][y+1][z][1];
+      u_load[2] = u[0][x-1][y+1][z][2];
+      
+      u_xi = u_load[0] + u_load[1]*(-1);
+      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+      u_x_xi = u[0][x][y][z][0] + u[0][x][y][z][1] * (-1);
+      
+      // step 5, compute f(e)(x-xi[0], t)
+      f_e[9] = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+      
+      // step 6, compute f(e, o)(x-xi[0], t)
+      f_e_o[9] = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
+      
+      // step 8.5, compute f(e, o)(x, t)
+      f_x_t = 3.0 * 1.0/36.0 * p[0][x][y][z] * u_x_xi;
+      
+      // step 9, compute f(x, t+1)
+      f[9] =  f_e[9] + 2*( omega-1/omega )*( f_x_t - f_e_o[9] ) ;  // Eq.11
+}
+
+void alpha_10_call()
+{
+      // alpha = 0 calculate u * xi and u square  xi(10) { -1, -1,  0, }
+            
+      //load p(x-xia) and u(x-xia)
+      p_load = p[0][x+1][y+1][z];
+      
+      u_load[0] = u[0][x+1][y+1][z][0];
+      u_load[1] = u[0][x+1][y+1][z][1];
+      u_load[2] = u[0][x+1][y+1][z][2];
+      
+      u_xi = u_load[0]*(-1) + u_load[1]*(-1);
+      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+      u_x_xi = u[0][x][y][z][0] * (-1) + u[0][x][y][z][1] * (-1);
+      
+      // step 5, compute f(e)(x-xi[0], t)   
+      f_e[10] = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+      
+      // step 6, compute f(e, o)(x-xi[0], t)
+      f_e_o[10] = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
+      
+      // step 8.5, compute f(e, o)(x, t)
+      f_x_t = 3.0 * 1.0/36.0 * p[0][x][y][z] * u_x_xi;
+      
+      // step 9, compute f(x, t+1)
+      f[10] =  f_e[10] + 2*( omega-1/omega )*( f_x_t - f_e_o[10] ) ;  // Eq.11
+}
+
+void alpha_11_call()
+{
+      // alpha = 0 calculate u * xi and u square  xi(11) {  1,  0,  1, }
+            
+      //load p(x-xia) and u(x-xia)
+      p_load = p[0][x-1][y][z-1];
+      
+      u_load[0] = u[0][x-1][y][z-1][0];
+      u_load[1] = u[0][x-1][y][z-1][1];
+      u_load[2] = u[0][x-1][y][z-1][2];
+      
+      u_xi = u_load[0] + u_load[2];
+      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+      u_x_xi = u[0][x][y][z][0] + u[0][x][y][z][2];
+      
+      // step 5, compute f(e)(x-xi[0], t)
+      f_e[11] = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+      
+      // step 6, compute f(e, o)(x-xi[0], t)
+      f_e_o[11] = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
+      
+      // step 8.5, compute f(e, o)(x, t)
+      f_x_t = 3.0 * 1.0/36.0 * p[0][x][y][z] * u_x_xi;
+      
+      // step 9, compute f(x, t+1)
+      f[11] =  f_e[11] + 2*( omega-1/omega )*( f_x_t - f_e_o[11] ) ;  // Eq.11
+}
+
+void alpha_12_call()
+{
+      // alpha = 0 calculate u * xi and u square  xi(12) { -1,  0,  1, }
+            
+      //load p(x-xia) and u(x-xia)
+      p_load = p[0][x+1][y][z-1];
+      
+      u_load[0] = u[0][x+1][y][z-1][0];
+      u_load[1] = u[0][x+1][y][z-1][1];
+      u_load[2] = u[0][x+1][y][z-1][2];
+      
+      u_xi = u_load[0]*(-1) + u_load[2];
+      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+      u_x_xi = u[0][x][y][z][0] * (-1) + u[0][x][y][z][2];
+      
+      // step 5, compute f(e)(x-xi[0], t)   
+      f_e[12] = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+      
+      // step 6, compute f(e, o)(x-xi[0], t)
+      f_e_o[12] = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
+      
+      // step 8.5, compute f(e, o)(x, t)
+      f_x_t = 3.0 * 1.0/36.0 * p[0][x][y][z] * u_x_xi;
+      
+      // step 9, compute f(x, t+1)
+      f[12] =  f_e[2] + 2*( omega-1/omega )*( f_x_t - f_e_o[12] ) ;  // Eq.11
+}
+
+void alpha_13_call()
+{
+      // alpha = 0 calculate u * xi and u square  xi(13) {  1,  0, -1, }
+            
+      //load p(x-xia) and u(x-xia)
+      p_load = p[0][x-1][y][z+1];
+      
+      u_load[0] = u[0][x-1][y][z+1][0];
+      u_load[1] = u[0][x-1][y][z+1][1];
+      u_load[2] = u[0][x-1][y][z+1][2];
+      
+      u_xi = u_load[0] + u_load[2]*(-1);
+      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+      u_x_xi = u[0][x][y][z][0] + u[0][x][y][z][2] * (-1);
+      
+      // step 5, compute f(e)(x-xi[0], t)
+      f_e[13] = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+      
+      // step 6, compute f(e, o)(x-xi[0], t)
+      f_e_o[13] = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
+      
+      // step 8.5, compute f(e, o)(x, t)
+      f_x_t = 3.0 * 1.0/36.0 * p[0][x][y][z] * u_x_xi;
+      
+      // step 9, compute f(x, t+1)
+      f[13] =  f_e[13] + 2*( omega-1/omega )*( f_x_t - f_e_o[13] ) ;  // Eq.11
+}
+
+void alpha_14_call()
+{
+      // alpha = 0 calculate u * xi and u square  xi(14) { -1,  0, -1, }
+            
+      //load p(x-xia) and u(x-xia)
+      p_load = p[0][x+1][y][z+1];
+      
+      u_load[0] = u[0][x+1][y][z+1][0];
+      u_load[1] = u[0][x+1][y][z+1][1];
+      u_load[2] = u[0][x+1][y][z+1][2];
+      
+      u_xi = u_load[0]*(-1) + u_load[2]*(-1);
+      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+      u_x_xi = u[0][x][y][z][0] * (-1) + u[0][x][y][z][2] * (-1);
+      
+      // step 5, compute f(e)(x-xi[0], t)   
+      f_e[14] = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+      
+      // step 6, compute f(e, o)(x-xi[0], t)
+      f_e_o[14] = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
+      
+      // step 8.5, compute f(e, o)(x, t)
+      f_x_t = 3.0 * 1.0/36.0 * p[0][x][y][z] * u_x_xi;
+      
+      // step 9, compute f(x, t+1)
+      f[14] =  f_e[14] + 2*( omega-1/omega )*( f_x_t - f_e_o[14] ) ;  // Eq.11
+}
+
+void alpha_15_call()
+{
+      // alpha = 0 calculate u * xi and u square  xi(15) {  0,  1,  1, }
+            
+      //load p(x-xia) and u(x-xia)
+      p_load = p[0][x][y-1][z-1];
+      
+      u_load[0] = u[0][x][y-1][z-1][0];
+      u_load[1] = u[0][x][y-1][z-1][1];
+      u_load[2] = u[0][x][y-1][z-1][2];
+      
+      u_xi = u_load[1] + u_load[2];
+      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+      u_x_xi = u[0][x][y][z][1] + u[0][x][y][z][2];
+      
+      // step 5, compute f(e)(x-xi[0], t)
+      f_e[15] = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+      
+      // step 6, compute f(e, o)(x-xi[0], t)
+      f_e_o[15] = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
+      
+      // step 8.5, compute f(e, o)(x, t)
+      f_x_t = 3.0 * 1.0/36.0 * p[0][x][y][z] * u_x_xi;
+      
+      // step 9, compute f(x, t+1)
+      f[15] =  f_e[15] + 2*( omega-1/omega )*( f_x_t - f_e_o[15] ) ;  // Eq.11
+}
+
+void alpha_16_call()
+{
+      // alpha = 0 calculate u * xi and u square  xi(16) {  0, -1,  1, }
+            
+      //load p(x-xia) and u(x-xia)
+      p_load = p[0][x][y+1][z-1];
+      
+      u_load[0] = u[0][x][y+1][z-1][0];
+      u_load[1] = u[0][x][y+1][z-1][1];
+      u_load[2] = u[0][x][y+1][z-1][2];
+      
+      u_xi = u_load[1]*(-1) + u_load[2];
+      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+      u_x_xi = u[0][x][y][z][1] * (-1) + u[0][x][y][z][2];
+      
+      // step 5, compute f(e)(x-xi[0], t)   
+      f_e[16] = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+      
+      // step 6, compute f(e, o)(x-xi[0], t)
+      f_e_o[16] = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
+      
+      // step 8.5, compute f(e, o)(x, t)
+      f_x_t = 3.0 * 1.0/36.0 * p[0][x][y][z] * u_x_xi;
+      
+      // step 9, compute f(x, t+1)
+      f[16] =  f_e[16] + 2*( omega-1/omega )*( f_x_t - f_e_o[16] ) ;  // Eq.11
+}
+
+void alpha_17_call()
+{
+      // alpha = 0 calculate u * xi and u square  xi(17) {  0,  1, -1, }
+            
+      //load p(x-xia) and u(x-xia)
+      p_load = p[0][x][y-1][z+1];
+      
+      u_load[0] = u[0][x][y-1][z+1][0];
+      u_load[1] = u[0][x][y-1][z+1][1];
+      u_load[2] = u[0][x][y-1][z+1][2];
+      
+      u_xi = u_load[1] + u_load[2] * (-1);
+      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+      u_x_xi = u[0][x][y][z][1] + u[0][x][y][z][2] * (-1);
+      
+      // step 5, compute f(e)(x-xi[0], t)
+      f_e[17] = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+      
+      // step 6, compute f(e, o)(x-xi[0], t)
+      f_e_o[17] = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
+      
+      // step 8.5, compute f(e, o)(x, t)
+      f_x_t = 3.0 * 1.0/36.0 * p[0][x][y][z] * u_x_xi;
+      
+      // step 9, compute f(x, t+1)
+      f[17] =  f_e[17] + 2*( omega-1/omega )*( f_x_t - f_e_o[17] ) ;  // Eq.11
+}
+
+void alpha_18_call()
+{
+      // alpha = 0 calculate u * xi and u square  xi(18) {  0, -1, -1, }
+            
+      //load p(x-xia) and u(x-xia)
+      p_load = p[0][x][y+1][z+1];
+      
+      u_load[0] = u[0][x][y+1][z+1][0];
+      u_load[1] = u[0][x][y+1][z+1][1];
+      u_load[2] = u[0][x][y+1][z+1][2];
+      
+      u_xi = u_load[1] * (-1) + u_load[2] * (-1);
+      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+      u_x_xi = u[0][x][y][z][1] * (-1) + u[0][x][y][z][2] * (-1);
+      
+      // step 5, compute f(e)(x-xi[0], t)   
+      f_e[18] = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+      
+      // step 6, compute f(e, o)(x-xi[0], t)
+      f_e_o[18] = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
+      
+      // step 8.5, compute f(e, o)(x, t)
+      f_x_t = 3.0 * 1.0/36.0 * p[0][x][y][z] * u_x_xi;
+      
+      // step 9, compute f(x, t+1)
+      f[18] =  f_e[18] + 2*( omega-1/omega )*( f_x_t - f_e_o[18] ) ;  // Eq.11
+}
+
 
 int main()
 {
-    printf("\nprogram start\n");
+    printf("\nlwacm start...\n");
     
     int i = 0;
     
-    // variables
-    int alpha = 0;
-    int t = 0;
 
-    int x = 0;
-    int y = 0;
-    int z = 0;
-    
     // initialize p and u
     for( x = 0; x < N_X; x++)
     {
@@ -151,7 +634,7 @@ int main()
       {
         for( z = 0; z < N_Z; z++)
         {
-            p_store[0][x][y][z] = 1.0f; // set it to 1.0
+            p[0][x][y][z] = 1.0f; // set it to 1.0
             
             u[0][x][y][z][0] = 0;
             u[0][x][y][z][1] = 0;
@@ -159,11 +642,6 @@ int main()
         }
       }
     }
-    
-    // temperary variable for calculation
-    double u_temp = 0;
-    double u_2_temp = 0;
-    double f_x_t = 0;
     
     // for all time step t
     for( t = 0; t < T_MAX; t++)
@@ -179,48 +657,40 @@ int main()
             for( z = 0; z < N_Z; z++)
             {
                 
-                // for all index alpha
-                for( alpha = 0; alpha <= ALPHA_MAX; alpha++)
-                {
-                    // load p and u
-                    
-                    u_temp = u_x_xi( x, y, z, alpha );    // u times xi(alpha)
-                    //printf("u_temp = %f \n", u_temp);
-                    
-                    u_2_temp = u_square( x, y, z );       // u square
-                    
-                    // step 5, compute f(e)(x-xi, t)
-                    f_e[alpha]   =  w(alpha) * p_store[0][x][y][z] * ( 1 + 3*u_temp + 9*u_temp*u_temp/2 - 3*u_2_temp/2 );  // Eq.8
-                    
-                    // step 6, compute f(e, o)(x-xi, t)
-                    f_e_o[alpha] =  w(alpha) * p_store[0][x][y][z] * ( 1 + 9*u_temp*u_temp/2 - 3*u_2_temp/2 );  // Eq.10
-                    
-                }
-                
-                // for all index alpha
-                for( alpha = 0; alpha <= ALPHA_MAX; alpha++)
-                {
-                    // step 9, compute f(a)(x, t+1)
-                    u_2_temp = u_square( x, y, z );       // u square
-                    
-                    f_x_t = w(alpha) * p_store[0][x][y][z] * ( 1 - 3*u_2_temp/2 );
-                    
-                    f[alpha] =  f_e[alpha] + 2*( omega-1/omega )*( f_x_t - f_e_o[alpha] ) ;  // Eq.11
-                }
+                // for all alpha from 0 to 18, calculate f[]
+                alpha_0_call();
+                alpha_1_call();
+                alpha_2_call();
+                alpha_3_call();
+                alpha_4_call();
+                alpha_5_call();
+                alpha_6_call();
+                alpha_7_call();
+                alpha_8_call();
+                alpha_9_call();
+                alpha_10_call();
+                alpha_11_call();
+                alpha_12_call();
+                alpha_13_call();
+                alpha_14_call();
+                alpha_15_call();
+                alpha_16_call();
+                alpha_17_call();
+                alpha_18_call();
                 
                 // step 11, compute p(x, t+1)
-                p_store[1][x][y][z] = compute_p();
-                
+                p[1][x][y][z] = compute_p();
+      
                 // step 12, compute u(x, t+1)
-                compute_u(x, y, z, p_store[1][x][y][z]);
-                
-                // step 13, store p(x, t+1) and u(x, t+1)
-                
-                store_p(x, y, z);
-                store_u(x, y, z);
-                
-                //printf("x = %d, y = %d, z = %d \n", x, y, z );
-                
+                compute_u(x, y, z, p[1][x][y][z]);
+      
+                // step 13, store p(x, t+1)
+                p[0][x][y][z] = p[1][x][y][z];
+      
+                // step 13, store u(x, t+1)
+                u[0][x][y][z][0] = u[1][x][y][z][0];
+                u[0][x][y][z][1] = u[1][x][y][z][1];
+                u[0][x][y][z][2] = u[1][x][y][z][2];
             }
           }
         }
