@@ -3,8 +3,22 @@ lwacm
 
 Link-wise Artificial Compressibility Method
 
+update:
 
-questioins:
+1, get rid of all if statements.
+2, instead of using alpha loop, I used hard coded call back functions to speed up process.
+
+
+questions:
+
+1, with the initial values of p and u provided, why the values of array f dropped dramatically after the 3rd time step ?
+
+2, seem that we do not need 2 arraies to store the values of p and u, we can just use e.g. double p_store[N_X][N_Y][N_Z]
+   because the calculation of p and u does not depend on the previous values ?
+
+
+
+old questioins:
 
 1, equatioin 11, what is f(a,e,o)(x,t) and how to calculate it: it is the current value of E.q 10
 
@@ -15,10 +29,6 @@ questioins:
    
 4, it is a good idea to declare variables as globle? you can do it
 
-
-
-
-f[0] = 1.0/3.0 * p(x-xi0) * ( 1 + 3 )
 
 
 

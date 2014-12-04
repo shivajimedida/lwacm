@@ -626,7 +626,6 @@ int main()
     
     int i = 0;
     
-
     // initialize p and u
     for( x = 0; x < N_X; x++)
     {
