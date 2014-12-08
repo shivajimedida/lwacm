@@ -32,19 +32,22 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#define T_MAX     100
-#define N_X       10
-#define N_Y       10
-#define N_Z       10
-#define ALPHA_MAX 18
+#define T_MAX     10
+#define N_X       100
+#define N_Y       100
+#define N_Z       100
+#define ALPHA_MAX 100
 
 const double omega = 1.5;
 
 // time and index variables
 int t = 0;
+
 int x = 0;
 int y = 0;
 int z = 0;
+
+int i = 0;
 
 // array to store value of p, t=0 is t, t=1 is t+1
 // use x+1, y+1, z+1 to avoid illegal access like p(x-xi_alpha), same for u[]
@@ -72,6 +75,38 @@ double f_x_t = 0;   // f(e, o)(x, t)
 double p_load = 0;
 double u_load[3] = {0, 0, 0};
 
+// this is a debug function
+void test()
+{
+    printf(">> time step = %d \n", t);
+    
+    // part to sum up rho globally
+    double result = 0;
+      
+    for( x = 1; x < N_X; x++)
+    {
+      for( y = 1; y < N_Y; y++)
+      {
+        for( z = 1; z < N_Z; z++)
+        {
+            // step 13, store p(x, t+1)
+            result += p[0][x][y][z];
+            
+        }
+      }
+    }
+    
+    printf("   sum of all rho[x][y][z] = %e \n", result );
+    
+    // print out f[]
+    for( i = 0; i < 19; i++)
+    {
+        printf("   f(%d) = %e, ", i, f[i] );
+    }
+        
+    printf("\n_______________________________________________________________________________________________\n");
+}
+
 // call back functions to calculate f for each alpha from 0 to 18
 void alpha_0_call()
 {      
@@ -83,9 +118,9 @@ void alpha_0_call()
       u_load[0] = u[0][x][y][z][0];
       u_load[1] = u[0][x][y][z][1];
       u_load[2] = u[0][x][y][z][2];
-             
+      
       u_xi = 0;
-      u_2  = u_load[0] * u_load[0] + u_load[0] * u_load[0] + u_load[0] * u_load[0];
+      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
       u_x_xi = 0;
       
       //  the follwoing code can be abbreviated
@@ -135,11 +170,11 @@ void alpha_2_call()
       // alpha = 0 calculate u * xi and u square  xi(2)  { -1,  0,  0, }
       
       //load p(x-xia) and u(x-xia)
-      p_load = p[0][x-1][y][z];
+      p_load = p[0][x+1][y][z];
       
-      u_load[0] = u[0][x-1][y][z][0];
-      u_load[1] = u[0][x-1][y][z][1];
-      u_load[2] = u[0][x-1][y][z][2];
+      u_load[0] = u[0][x+1][y][z][0];
+      u_load[1] = u[0][x+1][y][z][1];
+      u_load[2] = u[0][x+1][y][z][2];
       
       u_xi = u_load[0]*(-1);
       u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
@@ -469,7 +504,7 @@ void alpha_13_call()
 void alpha_14_call()
 {
       // alpha = 0 calculate u * xi and u square  xi(14) { -1,  0, -1, }
-            
+      
       //load p(x-xia) and u(x-xia)
       p_load = p[0][x+1][y][z+1];
       
@@ -525,7 +560,7 @@ void alpha_15_call()
 void alpha_16_call()
 {
       // alpha = 0 calculate u * xi and u square  xi(16) {  0, -1,  1, }
-            
+      
       //load p(x-xia) and u(x-xia)
       p_load = p[0][x][y+1][z-1];
       
@@ -609,9 +644,9 @@ void alpha_18_call()
 
 int main()
 {
-    printf("\nlwacm start...\n");
-    
-    int i = 0;
+    printf("\n>> lwacm start...\n");
+    printf("\n   configuration : N_X=%d, N_Y=%d N_Z=%d\n", N_X, N_Y, N_Z );
+    printf("\n   timestep : t=%d\n\n", T_MAX );
     
     // initialize p and u
     for( x = 0; x < N_X+1; x++)
@@ -637,8 +672,6 @@ int main()
     // for all time step t
     for( t = 0; t < T_MAX; t++)
     {
-        
-        printf(">> time step = %d \n", t);
         
         // loop 1, calculation
         // for all mesh point x, calculate p[1][] and u[1][]
@@ -703,12 +736,11 @@ int main()
           }
         }
         
-        for( i = 0; i < 19; i++)
-        {
-            printf("   f(%d) = %e \n", i, f[i] );
-        }
+        
+        test();
         
         //usleep(50000);
+        
         
     }
     

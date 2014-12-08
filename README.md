@@ -12,15 +12,14 @@ The source code is free, do whatever you want.
 
 New questions:
 
-1, is it a good practice to merge the formulas to speed up calculation?
-   e.g change "3.0*1.0/36.0" into "1.0/12.0"
-
-
-
 
 ________________________________________________________________________________________________
 
 change log:
+
+v0.21
+1, fix some typo
+2, add test() function to show sum of rho() and f()
 
 v0.2
 1, fix the boundary problem by adding 1 to all x, y and z index for p[] and u[].
@@ -55,8 +54,8 @@ Old questioins:
    because the calculation of p and u does not depend on the previous values ?
    No, because the calculation of f[] still depends on p[0][]
 
-
-
+7, is it a good practice to merge the formulas to speed up calculation? e.g change "3.0*1.0/36.0" into "1.0/12.0"
+   No worries, the compiler will do this instead
 
 
 
