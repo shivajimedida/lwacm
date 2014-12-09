@@ -31,13 +31,13 @@
 
 #include <stdio.h>
 #include <time.h>
-//#include <unistd.h>
+#include <unistd.h>
 
-#define T_MAX     200
-#define N_X       10
-#define N_Y       10
-#define N_Z       10
-#define ALPHA_MAX 10
+#define T_MAX     30
+#define N_X       50
+#define N_Y       50
+#define N_Z       50
+#define ALPHA_MAX 50
 
 //collision frequency
 const double omega = 1.5;
@@ -90,9 +90,7 @@ void test()
     printf(">> time step = %d \n", t);
     
     loop_t = clock();
-    
     total_t = (loop_t - start_t) / CLOCKS_PER_SEC;
-    
     printf("   time taken by CPU: %f seconds\n\n", (double)total_t  );
     
     // part to sum up rho globally
@@ -106,7 +104,6 @@ void test()
         {
             // step 13, store p(x, t+1)
             result += p[t_now][x][y][z];
-            
         }
       }
     }
@@ -659,10 +656,9 @@ void alpha_18_call()
 
 int main()
 {
-    printf("\n>> lwacm start...\n");
+    printf("\n>> program start...\n");
     printf("\n   domain size : N_X = %d, N_Y = %d, N_Z = %d\n", N_X, N_Y, N_Z );
     printf("\n   timestep required : T_MAX = %d\n\n", T_MAX );
-    
     
     
     // initialize p and u
@@ -686,11 +682,9 @@ int main()
       }
     }
     
-    
     // initialize toggle flag
     t_now = 0;
     t_next = 1;
-    
     
     start_t = clock();
     
@@ -698,7 +692,6 @@ int main()
     for( t = 0; t < T_MAX; t++)
     {
         
-        // loop 1, calculation
         // for all mesh point x, calculate p[t_next][] and u[t_next][]
         for( x = 1; x < N_X; x++)
         {
@@ -746,7 +739,6 @@ int main()
                 u[t_now][x][y][z][1] = u[t_next][x][y][z][1];
                 u[t_now][x][y][z][2] = u[t_next][x][y][z][2];
                 
-                
             }
           }
         }
@@ -758,10 +750,7 @@ int main()
         test();
         
         //usleep(50000);
-        
-        
     }
-    
     
     end_t = clock();
     

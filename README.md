@@ -3,25 +3,16 @@ lwacm
 
 Link-wise Artificial Compressibility Method C implementation
 
-by Yifan Yang with supervisor Thomas Zeiser @ FAU
-                                       01.12.2014
+by Yifan Yang with supervisor Thomas Zeiser @ FAU   01.12.2014
 
 The source code is free, do whatever you want.
 
 
-
-
 to do:
-
-Measure the performance of your code. The usual performance unit for the LBM is
-Mega lattice site updates per second (MLUps). In order to calculate your MLUps value,
-count the fluid cells in your domain, multiply that by the number of time steps you are using
-and divide this number of total updated cells by the time you needed for the simulation.
 
 add time measurement before and after the iteration loop and print the number of lattice site
 updates per second, i.e. (N_X*N_Y*N_Z*T_MAX) / Delta_t. A nice graph also would be
 performance as function of the domain size.
-
 
 ________________________________________________________________________________________________
 
