@@ -30,18 +30,19 @@
  */
 
 #include <stdio.h>
-#include <unistd.h>
 #include <time.h>
+//#include <unistd.h>
 
-#define T_MAX     10
-#define N_X       100
-#define N_Y       100
-#define N_Z       100
-#define ALPHA_MAX 100
+#define T_MAX     200
+#define N_X       10
+#define N_Y       10
+#define N_Z       10
+#define ALPHA_MAX 10
 
+//collision frequency
 const double omega = 1.5;
 
-// time and index variables
+// time step and index variables
 int t = 0;
 
 int x = 0;
@@ -55,9 +56,7 @@ int t_now = 0;
 int t_next = 0;
 
 //time parameter
-time_t rawtime;
-struct tm * timeinfo;
-
+clock_t start_t, loop_t, end_t, total_t;
 
 // array to store value of p, t=0 is t, t=1 is t+1
 // use x+1, y+1, z+1 to avoid illegal access like p(x-xi_alpha), same for u[]
@@ -85,21 +84,16 @@ double f_x_t = 0;   // f(e, o)(x, t)
 double p_load = 0;
 double u_load[3] = {0, 0, 0};
 
-void print_time()
-{
-    time ( &rawtime );
-    timeinfo = localtime ( &rawtime );
-    
-    printf("   time : [ %d-%d-%d, %d : %d : %d ] \n", timeinfo->tm_year+1900, timeinfo->tm_mon+1, timeinfo->tm_mday, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
-    
-}
-
 // this is a debug function
 void test()
 {
     printf(">> time step = %d \n", t);
     
-    print_time();
+    loop_t = clock();
+    
+    total_t = (loop_t - start_t) / CLOCKS_PER_SEC;
+    
+    printf("   time taken by CPU: %f seconds\n\n", (double)total_t  );
     
     // part to sum up rho globally
     double result = 0;
@@ -124,7 +118,7 @@ void test()
     {
         printf("   f(%d) = %e, ", i, f[i] );
     }
-        
+    
     printf("\n_______________________________________________________________________________________________\n");
 }
 
@@ -666,10 +660,11 @@ void alpha_18_call()
 int main()
 {
     printf("\n>> lwacm start...\n");
-    printf("\n   configuration : N_X=%d, N_Y=%d N_Z=%d\n", N_X, N_Y, N_Z );
-    printf("\n   timestep : t=%d\n\n", T_MAX );
+    printf("\n   domain size : N_X = %d, N_Y = %d, N_Z = %d\n", N_X, N_Y, N_Z );
+    printf("\n   timestep required : T_MAX = %d\n\n", T_MAX );
     
-
+    
+    
     // initialize p and u
     for( x = 0; x < N_X+1; x++)
     {
@@ -695,6 +690,9 @@ int main()
     // initialize toggle flag
     t_now = 0;
     t_next = 1;
+    
+    
+    start_t = clock();
     
     // for all time step t
     for( t = 0; t < T_MAX; t++)
@@ -754,8 +752,8 @@ int main()
         }
         
         // toggle t_now and t_next
-        t_now = 1 - t_now;
-        t_next = 1 - t_next; 
+        t_now  = 1-t_now;
+        t_next = 1-t_next; 
         
         test();
         
@@ -764,7 +762,17 @@ int main()
         
     }
     
+    
+    end_t = clock();
+    
+    total_t = (end_t - start_t) / CLOCKS_PER_SEC;
+    
+    printf("\n   Total loop time taken by CPU: %f seconds\n", (double)total_t  );
+    printf("   MLUps =  %f \n\n", (N_X * N_Y * N_Z * T_MAX)/(double)total_t/1000000.0  );
+    
     return 0;
 }
+
+
 
 

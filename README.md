@@ -1,7 +1,7 @@
 lwacm
 =====
 
-Link-wise Artificial Compressibility Method
+Link-wise Artificial Compressibility Method C implementation
 
 by Yifan Yang with supervisor Thomas Zeiser @ FAU
                                        01.12.2014
@@ -10,12 +10,28 @@ The source code is free, do whatever you want.
 
 
 
-New questions:
+
+to do:
+
+Measure the performance of your code. The usual performance unit for the LBM is
+Mega lattice site updates per second (MLUps). In order to calculate your MLUps value,
+count the fluid cells in your domain, multiply that by the number of time steps you are using
+and divide this number of total updated cells by the time you needed for the simulation.
+
+add time measurement before and after the iteration loop and print the number of lattice site
+updates per second, i.e. (N_X*N_Y*N_Z*T_MAX) / Delta_t. A nice graph also would be
+performance as function of the domain size.
 
 
 ________________________________________________________________________________________________
 
 change log:
+
+v0.22
+1, use toggle flag to speed up process, and merge the stroe loop into calculation loop
+2, add time measurement
+3, add MLUps messurement function
+
 
 v0.21
 1, fix some typo
@@ -56,6 +72,11 @@ Old questioins:
 
 7, is it a good practice to merge the formulas to speed up calculation? e.g change "3.0*1.0/36.0" into "1.0/12.0"
    No worries, the compiler will do this instead
+
+8, if we need to copy data from p[1][] to p[0][], how about just use *memcpy() *directly?
+   memcpy is evil, too. It causes the same amount of data (memory) traffic as plain C statements.
+
+
 
 
 
