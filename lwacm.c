@@ -33,11 +33,10 @@
 #include <time.h>
 #include <unistd.h>
 
-#define T_MAX     30
-#define N_X       50
-#define N_Y       50
-#define N_Z       50
-#define ALPHA_MAX 50
+#define T_MAX     3000
+#define N_X       10
+#define N_Y       10
+#define N_Z       10
 
 //collision frequency
 const double omega = 1.5;
@@ -88,10 +87,6 @@ double u_load[3] = {0, 0, 0};
 void test()
 {
     printf(">> time step = %d \n", t);
-    
-    loop_t = clock();
-    total_t = (loop_t - start_t) / CLOCKS_PER_SEC;
-    printf("   time taken by CPU: %f seconds\n\n", (double)total_t  );
     
     // part to sum up rho globally
     double result = 0;
@@ -656,6 +651,8 @@ void alpha_18_call()
 
 int main()
 {
+    start_t = clock();
+    
     printf("\n>> program start...\n");
     printf("\n   domain size : N_X = %d, N_Y = %d, N_Z = %d\n", N_X, N_Y, N_Z );
     printf("\n   timestep required : T_MAX = %d\n\n", T_MAX );
@@ -685,8 +682,6 @@ int main()
     // initialize toggle flag
     t_now = 0;
     t_next = 1;
-    
-    start_t = clock();
     
     // for all time step t
     for( t = 0; t < T_MAX; t++)
@@ -731,13 +726,6 @@ int main()
                 u[t_next][x][y][z][1] = ( f[3]-f[4]+f[7]+f[8]-f[9]-f[10]+f[15]-f[16]+f[17]-f[18] )/p_load;
                 u[t_next][x][y][z][2] = ( f[5]-f[6]+f[11]+f[12]-f[13]-f[14]+f[15]+f[16]-f[17]-f[18] )/p_load;
                 
-                // step 13, store p(x, t+1)
-                p[t_now][x][y][z] = p[t_next][x][y][z];
-                
-                // step 13, store u(x, t+1)
-                u[t_now][x][y][z][0] = u[t_next][x][y][z][0];
-                u[t_now][x][y][z][1] = u[t_next][x][y][z][1];
-                u[t_now][x][y][z][2] = u[t_next][x][y][z][2];
                 
             }
           }
@@ -756,7 +744,7 @@ int main()
     
     total_t = (end_t - start_t) / CLOCKS_PER_SEC;
     
-    printf("\n   Total loop time taken by CPU: %f seconds\n", (double)total_t  );
+    printf("\n   Total time taken by CPU: %f seconds\n", (double)total_t  );
     printf("   MLUps =  %f \n\n", (N_X * N_Y * N_Z * T_MAX)/(double)total_t/1000000.0  );
     
     return 0;
