@@ -1,4 +1,4 @@
-/*
+/*  v 0.23
  *  Link-wise Artificial Compressibility Method
  *  by Yifan Yang with supervisor Thomas Zeiser @ FAU
  *                                             01.12.2014

@@ -18,6 +18,9 @@ ________________________________________________________________________________
 
 change log:
 
+v0.23
+1, get rid of the store step in mesh loop, which is redundant since we use toggle flag
+
 v0.22
 1, use toggle flag to speed up process, and merge the stroe loop into calculation loop
 2, add time measurement
