@@ -731,6 +731,150 @@ int main()
           }
         }
         
+        /*
+        
+        // explicit peridic boundary conditions
+        // surfaces
+        for( x = 1; x < N_X; x++)
+        {
+  	  for( y = 1; y < N_Y; y++)
+  	  {
+  	    p[t_next][x][y][0  ] = p[t_next][x][y][N_Z-1];
+  	    p[t_next][x][y][N_Z] = p[t_next][x][y][1    ];
+  	    
+  	    u[t_next][x][y][0  ][0] = u[t_next][x][y][N_Z-1][0];
+  	    u[t_next][x][y][N_Z][0] = u[t_next][x][y][1    ][0];
+  	    u[t_next][x][y][0  ][1] = u[t_next][x][y][N_Z-1][1];
+  	    u[t_next][x][y][N_Z][1] = u[t_next][x][y][1    ][1];
+  	    u[t_next][x][y][0  ][2] = u[t_next][x][y][N_Z-1][2];
+  	    u[t_next][x][y][N_Z][2] = u[t_next][x][y][1    ][2];
+  	  }
+  	}
+        				      
+        for( x = 1; x < N_X; x++)
+        {
+  	  for( z = 1; z < N_Z; z++)
+  	  {
+  	    p[t_next][x][0  ][z] = p[t_next][x][N_Y-1][z];
+  	    p[t_next][x][N_Y][z] = p[t_next][x][1    ][z];
+  	    
+  	    u[t_next][x][0  ][z][0] = u[t_next][x][N_Y-1][z][0];
+  	    u[t_next][x][N_Y][z][0] = u[t_next][x][1    ][z][0];
+  	    u[t_next][x][0  ][z][1] = u[t_next][x][N_Y-1][z][1];
+  	    u[t_next][x][N_Y][z][1] = u[t_next][x][1    ][z][1];
+  	    u[t_next][x][0  ][z][2] = u[t_next][x][N_Y-1][z][2];
+  	    u[t_next][x][N_Y][z][2] = u[t_next][x][1    ][z][2];
+  	  }
+  	}
+        
+        for( y = 1; x < N_Y; y++)
+  	{
+  	  for( z = 1; z < N_Z; z++)
+  	  {
+  	    p[t_next][  0][y][z] = p[t_next][N_X-1][y][z];
+  	    p[t_next][N_X][y][z] = p[t_next][1    ][y][z];
+  	    
+  	    u[t_next][  0][y][z][0] = u[t_next][N_X-1][y][z][0];
+  	    u[t_next][N_X][y][z][0] = u[t_next][1    ][y][z][0];
+  	    u[t_next][  0][y][z][1] = u[t_next][N_X-1][y][z][1];
+  	    u[t_next][N_X][y][z][1] = u[t_next][1    ][y][z][1];
+  	    u[t_next][  0][y][z][2] = u[t_next][N_X-1][y][z][2];
+  	    u[t_next][N_X][y][z][2] = u[t_next][1    ][y][z][2];
+  	  }
+  	}
+  	
+  	
+  	
+  	// lines x
+        for( x = 1; x < N_X; x++)
+  	{
+  	    // (x, 0, 0) 
+  	    p[t_next][ x ][ 0 ][ 0 ] = p[t_next][ x ][N_Y-1][N_Z-1];
+  	    u[t_next][ x ][ 0 ][ 0 ][0] = u[t_next][ x ][N_Y-1][N_Z-1][0];
+  	    u[t_next][ x ][ 0 ][ 0 ][1] = u[t_next][ x ][N_Y-1][N_Z-1][1];
+  	    u[t_next][ x ][ 0 ][ 0 ][2] = u[t_next][ x ][N_Y-1][N_Z-1][2];
+  	    
+  	    // (x, N_Y, N_Z)
+  	    p[t_next][ x ][N_Y][N_Z] = p[t_next][ x ][  1  ][  1  ];
+  	    u[t_next][ x ][N_Y][N_Z][0] = u[t_next][ x ][  1  ][  1  ][0];
+  	    u[t_next][ x ][N_Y][N_Z][1] = u[t_next][ x ][  1  ][  1  ][1];
+  	    u[t_next][ x ][N_Y][N_Z][2] = u[t_next][ x ][  1  ][  1  ][2];
+  	    
+  	    // (x, 0, N_Z)
+  	    p[t_next][ x ][ 0 ][ N_Z ] = p[t_next][ x ][N_Y-1][1];
+  	    u[t_next][ x ][ 0 ][ N_Z ][0] = u[t_next][ x ][N_Y-1][1][0];
+  	    u[t_next][ x ][ 0 ][ N_Z ][1] = u[t_next][ x ][N_Y-1][1][1];
+  	    u[t_next][ x ][ 0 ][ N_Z ][2] = u[t_next][ x ][N_Y-1][1][2];
+  	    
+  	    // (x, N_Y, 0)
+  	    p[t_next][ x ][N_Y][0] = p[t_next][ x ][  1  ][N_Z-1];
+  	    u[t_next][ x ][N_Y][0][0] = u[t_next][ x ][  1  ][N_Z-1][0];
+  	    u[t_next][ x ][N_Y][0][1] = u[t_next][ x ][  1  ][N_Z-1][1];
+  	    u[t_next][ x ][N_Y][0][2] = u[t_next][ x ][  1  ][N_Z-1][2];
+  	    
+  	}
+        
+  	// lines y
+        for( y = 1; y < N_Y; y++)
+  	{
+  	    // (0, y, 0) 
+  	    p[t_next][ 0 ][ y ][ 0 ] = p[t_next][N_X-1][y][N_Z-1];
+  	    u[t_next][ 0 ][ y ][ 0 ][0] = u[t_next][N_X-1][ y ][N_Z-1][0];
+  	    u[t_next][ 0 ][ y ][ 0 ][1] = u[t_next][N_X-1][ y ][N_Z-1][1];
+  	    u[t_next][ 0 ][ y ][ 0 ][2] = u[t_next][N_X-1][ y ][N_Z-1][2];
+  	    
+  	    // (N_X, y, N_Z)
+  	    p[t_next][N_X][ y ][N_Z] = p[t_next][ 1 ][ y ][  1  ];
+  	    u[t_next][N_X][ y ][N_Z][0] = u[t_next][ 1 ][ y ][  1  ][0];
+  	    u[t_next][N_X][ y ][N_Z][1] = u[t_next][ 1 ][ y ][  1  ][1];
+  	    u[t_next][N_X][ y ][N_Z][2] = u[t_next][ 1 ][ y ][  1  ][2];
+  	    
+  	    // (0, y, N_Z)
+  	    p[t_next][ 0 ][ y ][ N_Z ] = p[t_next][N_X-1][ y ][1];
+  	    u[t_next][ 0 ][ y ][ N_Z ][0] = u[t_next][N_X-1][ y ][1][0];
+  	    u[t_next][ 0 ][ y ][ N_Z ][1] = u[t_next][N_X-1][ y ][1][1];
+  	    u[t_next][ 0 ][ y ][ N_Z ][2] = u[t_next][N_X-1][ y ][1][2];
+  	    
+  	    // (N_X, y, 0)
+  	    p[t_next][N_X][ y ][0] = p[t_next][ 1 ][ y ][N_Z-1];
+  	    u[t_next][N_X][ y ][0][0] = u[t_next][ 1 ][ y ][N_Z-1][0];
+  	    u[t_next][N_X][ y ][0][1] = u[t_next][ 1 ][ y ][N_Z-1][1];
+  	    u[t_next][N_X][ y ][0][2] = u[t_next][ 1 ][ y ][N_Z-1][2];
+  	    
+  	}
+        
+  	// lines z
+        for( z = 1; z < N_Z; z++)
+  	{
+  	    // (0, 0, z) 
+  	    p[t_next][ 0 ][ 0 ][ z ] = p[t_next][N_X-1][N_Y-1][ z ];
+  	    u[t_next][ 0 ][ 0 ][ z ][0] = u[t_next][N_X-1][N_Y-1][ z ][0];
+  	    u[t_next][ 0 ][ 0 ][ z ][1] = u[t_next][N_X-1][N_Y-1][ z ][1];
+  	    u[t_next][ 0 ][ 0 ][ z ][2] = u[t_next][N_X-1][N_Y-1][ z ][2];
+  	    
+  	    // (N_X, N_Y, z)
+  	    p[t_next][N_X][N_Y][ z ] = p[t_next][ 1 ][  1  ][ z ];
+  	    u[t_next][N_X][N_Y][ z ][0] = u[t_next][ 1 ][  1  ][ z ][0];
+  	    u[t_next][N_X][N_Y][ z ][1] = u[t_next][ 1 ][  1  ][ z ][1];
+  	    u[t_next][N_X][N_Y][ z ][2] = u[t_next][ 1 ][  1  ][ z ][2];
+  	    
+  	    // (0, N_Y, z)
+  	    p[t_next][ 0 ][N_Y][ z ] = p[t_next][N_X-1][ 1 ][ z ];
+  	    u[t_next][ 0 ][N_Y][ z ][0] = u[t_next][N_X-1][ 1 ][ z ][0];
+  	    u[t_next][ 0 ][N_Y][ z ][1] = u[t_next][N_X-1][ 1 ][ z ][1];
+  	    u[t_next][ 0 ][N_Y][ z ][2] = u[t_next][N_X-1][ 1 ][ z ][2];
+  	    
+  	    // (N_X, 0, z)
+  	    p[t_next][N_X][ 0 ][ z ] = p[t_next][ 1 ][N_Y-1][ z ];
+  	    u[t_next][N_X][ 0 ][ z ][0] = u[t_next][ 1 ][N_Y-1][ z ][0];
+  	    u[t_next][N_X][ 0 ][ z ][1] = u[t_next][ 1 ][N_Y-1][ z ][1];
+  	    u[t_next][N_X][ 0 ][ z ][2] = u[t_next][ 1 ][N_Y-1][ z ][2];
+  	    
+  	}
+  	
+  	*/
+  	
+        
         // toggle t_now and t_next
         t_now  = 1-t_now;
         t_next = 1-t_next; 

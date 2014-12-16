@@ -778,11 +778,12 @@ int main()
 		{
                 
 		  // for all alpha from 0 to 18, calculate f[]
-		  //for ( a=0; a<19; a++)
-		  //{
-		  //  alpha_call(a);
-		  //}
+		  for( a=0; a<19; a++)
+		  {
+		    alpha_call(a);
+		  }
 		  
+		  /*
 		  alpha_0_call();
 		  alpha_1_call();
 		  alpha_2_call();
@@ -802,7 +803,9 @@ int main()
 		  alpha_16_call();
 		  alpha_17_call();
 		  alpha_18_call();
-                
+                  */
+                  
+                  
 		  // step 11, compute p(x, t+1)
 		  p_load = f[0]+f[1]+f[2]+f[3]+f[4]+f[5]+f[6]+f[7]+f[8]+f[9]+f[10]+f[11]+f[12]+f[13]+f[14]+f[15]+f[16]+f[17]+f[18];
                 
@@ -818,7 +821,7 @@ int main()
 	    }
 	}
         
-        
+        /*
         // explicit peridic boundary conditions
         for( x = 0; x < N_X+1; x++)
         {
@@ -864,7 +867,7 @@ int main()
   	    u[t_next][N_X][y][z][2] = u[t_next][1    ][y][z][2];
   	  }
   	}
-      
+      */
         
       // toggle t_now and t_next
       t_now  = 1-t_now;
