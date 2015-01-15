@@ -18,6 +18,10 @@ ________________________________________________________________________________
 
 change log:
 
+v0.3
+1, fix the boundary condition code, now the sun of p is stable all the time
+
+
 v0.23
 1, get rid of the store step in mesh loop, which is redundant since we use toggle flag
 

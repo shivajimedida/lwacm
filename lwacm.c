@@ -34,17 +34,17 @@
 #include <unistd.h>
 #include <stdbool.h>
 
-#define T_MAX     50
-#define N_X       2
-#define N_Y       2
-#define N_Z       2
+#define T_MAX     5000
+#define N_X       10
+#define N_Y       10
+#define N_Z       10
 
 int xi_x[19] = { 0, 1,-1, 0, 0, 0, 0, 1,-1, 1,-1, 1,-1, 1,-1, 0, 0, 0, 0};
 int xi_y[19] = { 0, 0, 0, 1,-1, 0, 0, 1, 1,-1,-1, 0, 0, 0, 0, 1,-1, 1,-1};
 int xi_z[19] = { 0, 0, 0, 0, 0, 1,-1, 0, 0, 0, 0, 1, 1,-1,-1, 1, 1,-1,-1};
 
 double  w[19] = { 1/3.0, 1/18.0, 1/18.0, 1/18.0, 1/18.0, 1/18.0, 1/18.0, 
-		  1/36.0,  1/36.0, 1/36.0, 1/36.0, 1/36.0, 1/36.0, 1/36.0, 1/36.0, 1/36.0, 1/36.0, 1/36.0, 1/36.0 };
+          1/36.0,  1/36.0, 1/36.0, 1/36.0, 1/36.0, 1/36.0, 1/36.0, 1/36.0, 1/36.0, 1/36.0, 1/36.0, 1/36.0 };
 
 //collision frequency
 const double omega = 1.5;
@@ -102,18 +102,17 @@ void test()
       
     for( x = 1; x < N_X+1; x++)
     {
-      for( y = 1; y < N_Y+1; y++)
-      {
-        for( z = 1; z < N_Z+1; z++)
+        for( y = 1; y < N_Y+1; y++)
         {
-            // calculate sum of p[]
-            result += p[t_next][x][y][z];
+            for( z = 1; z < N_Z+1; z++)
+            {
+                // calculate sum of p[]
+                result += p[t_next][x][y][z];
+            }
         }
-      }
     }
     
     printf("   sum of all rho[x][y][z] = %e \n", result );
-    
     printf("\n_______________________________________________________________________________________________\n");
 }
 
@@ -136,13 +135,8 @@ void alpha_call(int a)
   if ( zz == N_Z+1 ) { zz=1; flag = true; }
   
   
-  if(flag) { printf("\n>> access bc coord,  ( %d, %d, %d) <- (%d, %d, %d)", x-xi_x[a], y-xi_y[a], z-xi_z[a], xx, yy, zz ); }
+  //if(flag) { printf("\n>> access bc coord,  ( %d, %d, %d) <- (%d, %d, %d)", x-xi_x[a], y-xi_y[a], z-xi_z[a], xx, yy, zz ); }
   
-
-
-  xx=x-xi_x[a];
-  yy=y-xi_y[a];
-  zz=z-xi_z[a];
   
   */
 
@@ -715,11 +709,11 @@ int main()
     
     
     // initialize p and u
-    for( x = 0; x < N_X+1; x++)
+    for( x = 0; x < N_X+2; x++)
     {
-      for( y = 0; y < N_Y+1; y++)
+      for( y = 0; y < N_Y+2; y++)
       {
-        for( z = 0; z < N_Z+1; z++)
+        for( z = 0; z < N_Z+2; z++)
         {
             p[0][x][y][z] = 1.0f; // set it to 1.0
             p[1][x][y][z] = 1.0f; // set it to 1.0
@@ -752,14 +746,15 @@ int main()
             {
                 
                 
-	        // for all alpha from 0 to 18, calculate f[] for each node
-	        for( a=0; a<19; a++)
-		{
-		    alpha_call(a);
-                }
-		
+                // for all alpha from 0 to 18, calculate f[] for each node
+                
                 /*
-                // for all alpha from 0 to 18, calculate f[]
+                for( a = 0; a < 19; a++)
+                {
+                    alpha_call(a);
+                }
+                */
+                
                 alpha_0_call();
                 alpha_1_call();
                 alpha_2_call();
@@ -779,7 +774,6 @@ int main()
                 alpha_16_call();
                 alpha_17_call();
                 alpha_18_call();
-                */
                 
                 
                 // step 11, compute p(x, t+1)
@@ -792,7 +786,6 @@ int main()
                 u[t_next][x][y][z][1] = ( f[3]-f[4]+f[7]+f[8]-f[9]-f[10]+f[15]-f[16]+f[17]-f[18] )/p_load;
                 u[t_next][x][y][z][2] = ( f[5]-f[6]+f[11]+f[12]-f[13]-f[14]+f[15]+f[16]-f[17]-f[18] )/p_load;
                 
-            
             }
           }
         }
@@ -807,197 +800,143 @@ int main()
         // surfaces: xy
         for( x = 1; x < N_X+1; x++)
         {
-  	  for( y = 1; y < N_Y+1; y++)
-  	  {
-  	    p[t_next][ x ][ y ][ 0 ] = p[t_next][ x ][ y ][N_Z];
-  	    u[t_next][ x ][ y ][ 0 ][0] = u[t_next][ x ][ y ][N_Z][0];
-  	    u[t_next][ x ][ y ][ 0 ][1] = u[t_next][ x ][ y ][N_Z][1];
-  	    u[t_next][ x ][ y ][ 0 ][2] = u[t_next][ x ][ y ][N_Z][2];
-  	    
-  	    p[t_next][ x ][ y ][N_Z+1] = p[t_next][ x ][ y ][1];
-  	    u[t_next][ x ][ y ][N_Z+1][0] = u[t_next][ x ][ y ][1][0];
-  	    u[t_next][ x ][ y ][N_Z+1][1] = u[t_next][ x ][ y ][1][1];
-  	    u[t_next][ x ][ y ][N_Z+1][2] = u[t_next][ x ][ y ][1][2];
-  	    
-  	  }
-  	}
+            for( y = 1; y < N_Y+1; y++)
+            {
+                p[t_next][ x ][ y ][ 0 ] = p[t_next][ x ][ y ][N_Z];
+                u[t_next][ x ][ y ][ 0 ][0] = u[t_next][ x ][ y ][N_Z][0];
+                u[t_next][ x ][ y ][ 0 ][1] = u[t_next][ x ][ y ][N_Z][1];
+                u[t_next][ x ][ y ][ 0 ][2] = u[t_next][ x ][ y ][N_Z][2];
+          
+                p[t_next][ x ][ y ][N_Z+1] = p[t_next][ x ][ y ][1];
+                u[t_next][ x ][ y ][N_Z+1][0] = u[t_next][ x ][ y ][1][0];
+                u[t_next][ x ][ y ][N_Z+1][1] = u[t_next][ x ][ y ][1][1];
+                u[t_next][ x ][ y ][N_Z+1][2] = u[t_next][ x ][ y ][1][2];
+          
+            }
+        }
         
-        // surfaces: xz			      
+        // surfaces: xz                  
         for( x = 1; x < N_X+1; x++)
         {
-  	  for( z = 1; z < N_Z+1; z++)
-  	  {
-  	    p[t_next][ x ][ 0 ][ z ] = p[t_next][ x ][N_Y][ z ];
-  	    u[t_next][ x ][ 0 ][ z ][0] = u[t_next][ x ][N_Y][ z ][0];
-  	    u[t_next][ x ][ 0 ][ z ][1] = u[t_next][ x ][N_Y][ z ][1];
-  	    u[t_next][ x ][ 0 ][ z ][2] = u[t_next][ x ][N_Y][ z ][2];
-  	    
-  	    p[t_next][ x ][N_Y+1][ z ] = p[t_next][ x ][ 1 ][ z ];
-  	    u[t_next][ x ][N_Y+1][ z ][0] = u[t_next][ x ][ 1 ][ z ][0];
-  	    u[t_next][ x ][N_Y+1][ z ][1] = u[t_next][ x ][ 1 ][ z ][1];
-  	    u[t_next][ x ][N_Y+1][ z ][2] = u[t_next][ x ][ 1 ][ z ][2];
-  	    
-  	  }
-  	}
+            for( z = 1; z < N_Z+1; z++)
+            {
+                p[t_next][ x ][ 0 ][ z ] = p[t_next][ x ][N_Y][ z ];
+                u[t_next][ x ][ 0 ][ z ][0] = u[t_next][ x ][N_Y][ z ][0];
+                u[t_next][ x ][ 0 ][ z ][1] = u[t_next][ x ][N_Y][ z ][1];
+                u[t_next][ x ][ 0 ][ z ][2] = u[t_next][ x ][N_Y][ z ][2];
+          
+                p[t_next][ x ][N_Y+1][ z ] = p[t_next][ x ][ 1 ][ z ];
+                u[t_next][ x ][N_Y+1][ z ][0] = u[t_next][ x ][ 1 ][ z ][0];
+                u[t_next][ x ][N_Y+1][ z ][1] = u[t_next][ x ][ 1 ][ z ][1];
+                u[t_next][ x ][N_Y+1][ z ][2] = u[t_next][ x ][ 1 ][ z ][2];
+          
+            }
+        }
         
         // surfaces: yz
         for( y = 1; y < N_Y+1; y++)
-  	{
-  	  for( z = 1; z < N_Z+1; z++)
-  	  {
-  	    p[t_next][ 0 ][ y ][ z ] = p[t_next][N_X][ y ][ z ];
-  	    u[t_next][ 0 ][ y ][ z ][0] = u[t_next][N_X][ y ][ z ][0];
-  	    u[t_next][ 0 ][ y ][ z ][1] = u[t_next][N_X][ y ][ z ][1];
-  	    u[t_next][ 0 ][ y ][ z ][2] = u[t_next][N_X][ y ][ z ][2];
-  	    
-  	    p[t_next][N_X+1][ y ][ z ] = p[t_next][ 1 ][ y ][ z ];
-  	    u[t_next][N_X+1][ y ][ z ][0] = u[t_next][ 1 ][ y ][ z ][0];
-  	    u[t_next][N_X+1][ y ][ z ][1] = u[t_next][ 1 ][ y ][ z ][1];
-  	    u[t_next][N_X+1][ y ][ z ][2] = u[t_next][ 1 ][ y ][ z ][2];
-  	    
-  	  }
-  	}
-  	
-  	
-  	// lines x: 4
+        {
+            for( z = 1; z < N_Z+1; z++)
+            {
+                p[t_next][ 0 ][ y ][ z ] = p[t_next][N_X][ y ][ z ];
+                u[t_next][ 0 ][ y ][ z ][0] = u[t_next][N_X][ y ][ z ][0];
+                u[t_next][ 0 ][ y ][ z ][1] = u[t_next][N_X][ y ][ z ][1];
+                u[t_next][ 0 ][ y ][ z ][2] = u[t_next][N_X][ y ][ z ][2];
+          
+                p[t_next][N_X+1][ y ][ z ] = p[t_next][ 1 ][ y ][ z ];
+                u[t_next][N_X+1][ y ][ z ][0] = u[t_next][ 1 ][ y ][ z ][0];
+                u[t_next][N_X+1][ y ][ z ][1] = u[t_next][ 1 ][ y ][ z ][1];
+                u[t_next][N_X+1][ y ][ z ][2] = u[t_next][ 1 ][ y ][ z ][2];
+            
+            }
+        }
+      
+      
+        // lines x: 4
         for( x = 1; x < N_X+1; x++)
-  	{
-  	    // (x, 0, 0) 
-  	    p[t_next][ x ][ 0 ][ 0 ] = p[t_next][ x ][N_Y][N_Z];
-  	    u[t_next][ x ][ 0 ][ 0 ][0] = u[t_next][ x ][N_Y][N_Z][0];
-  	    u[t_next][ x ][ 0 ][ 0 ][1] = u[t_next][ x ][N_Y][N_Z][1];
-  	    u[t_next][ x ][ 0 ][ 0 ][2] = u[t_next][ x ][N_Y][N_Z][2];
-  	    
-  	    // (x, N_Y+1, N_Z+1)
-  	    p[t_next][ x ][N_Y+1][N_Z+1] = p[t_next][ x ][ 1 ][ 1 ];
-  	    u[t_next][ x ][N_Y+1][N_Z+1][0] = u[t_next][ x ][ 1 ][ 1 ][0];
-  	    u[t_next][ x ][N_Y+1][N_Z+1][1] = u[t_next][ x ][ 1 ][ 1 ][1];
-  	    u[t_next][ x ][N_Y+1][N_Z+1][2] = u[t_next][ x ][ 1 ][ 1 ][2];
-  	    
-  	    // (x, 0, N_Z+1)
-  	    p[t_next][ x ][ 0 ][N_Z+1] = p[t_next][ x ][N_Y][ 1 ];
-  	    u[t_next][ x ][ 0 ][N_Z+1][0] = u[t_next][ x ][N_Y][ 1 ][0];
-  	    u[t_next][ x ][ 0 ][N_Z+1][1] = u[t_next][ x ][N_Y][ 1 ][1];
-  	    u[t_next][ x ][ 0 ][N_Z+1][2] = u[t_next][ x ][N_Y][ 1 ][2];
-  	    
-  	    // (x, N_Y+1, 0)
-  	    p[t_next][ x ][N_Y+1][ 0 ] = p[t_next][ x ][ 1 ][N_Z];
-  	    u[t_next][ x ][N_Y+1][ 0 ][0] = u[t_next][ x ][ 1 ][N_Z][0];
-  	    u[t_next][ x ][N_Y+1][ 0 ][1] = u[t_next][ x ][ 1 ][N_Z][1];
-  	    u[t_next][ x ][N_Y+1][ 0 ][2] = u[t_next][ x ][ 1 ][N_Z][2];
-  	}
+        {
+            // (x, 0, 0) 
+            p[t_next][ x ][ 0 ][ 0 ] = p[t_next][ x ][N_Y][N_Z];
+            u[t_next][ x ][ 0 ][ 0 ][0] = u[t_next][ x ][N_Y][N_Z][0];
+            u[t_next][ x ][ 0 ][ 0 ][1] = u[t_next][ x ][N_Y][N_Z][1];
+            u[t_next][ x ][ 0 ][ 0 ][2] = u[t_next][ x ][N_Y][N_Z][2];
+          
+            // (x, N_Y+1, N_Z+1)
+            p[t_next][ x ][N_Y+1][N_Z+1] = p[t_next][ x ][ 1 ][ 1 ];
+            u[t_next][ x ][N_Y+1][N_Z+1][0] = u[t_next][ x ][ 1 ][ 1 ][0];
+            u[t_next][ x ][N_Y+1][N_Z+1][1] = u[t_next][ x ][ 1 ][ 1 ][1];
+            u[t_next][ x ][N_Y+1][N_Z+1][2] = u[t_next][ x ][ 1 ][ 1 ][2];
+          
+            // (x, 0, N_Z+1)
+            p[t_next][ x ][ 0 ][N_Z+1] = p[t_next][ x ][N_Y][ 1 ];
+            u[t_next][ x ][ 0 ][N_Z+1][0] = u[t_next][ x ][N_Y][ 1 ][0];
+            u[t_next][ x ][ 0 ][N_Z+1][1] = u[t_next][ x ][N_Y][ 1 ][1];
+            u[t_next][ x ][ 0 ][N_Z+1][2] = u[t_next][ x ][N_Y][ 1 ][2];
+          
+            // (x, N_Y+1, 0)
+            p[t_next][ x ][N_Y+1][ 0 ] = p[t_next][ x ][ 1 ][N_Z];
+            u[t_next][ x ][N_Y+1][ 0 ][0] = u[t_next][ x ][ 1 ][N_Z][0];
+            u[t_next][ x ][N_Y+1][ 0 ][1] = u[t_next][ x ][ 1 ][N_Z][1];
+            u[t_next][ x ][N_Y+1][ 0 ][2] = u[t_next][ x ][ 1 ][N_Z][2];
+        }
         
-  	// lines y: 4
+        // lines y: 4
         for( y = 1; y < N_Y+1; y++)
-  	{
-  	    // (0, y, 0) 
-  	    p[t_next][ 0 ][ y ][ 0 ] = p[t_next][N_X][y][N_Z];
-  	    u[t_next][ 0 ][ y ][ 0 ][0] = u[t_next][N_X][ y ][N_Z][0];
-  	    u[t_next][ 0 ][ y ][ 0 ][1] = u[t_next][N_X][ y ][N_Z][1];
-  	    u[t_next][ 0 ][ y ][ 0 ][2] = u[t_next][N_X][ y ][N_Z][2];
-  	    
-  	    // (N_X+1, y, N_Z+1)
-  	    p[t_next][N_X+1][ y ][N_Z+1] = p[t_next][ 1 ][ y ][  1  ];
-  	    u[t_next][N_X+1][ y ][N_Z+1][0] = u[t_next][ 1 ][ y ][  1  ][0];
-  	    u[t_next][N_X+1][ y ][N_Z+1][1] = u[t_next][ 1 ][ y ][  1  ][1];
-  	    u[t_next][N_X+1][ y ][N_Z+1][2] = u[t_next][ 1 ][ y ][  1  ][2];
-  	    
-  	    // (0, y, N_Z+1)
-  	    p[t_next][ 0 ][ y ][N_Z+1] = p[t_next][N_X][ y ][ 1 ];
-  	    u[t_next][ 0 ][ y ][N_Z+1][0] = u[t_next][N_X][ y ][ 1 ][0];
-  	    u[t_next][ 0 ][ y ][N_Z+1][1] = u[t_next][N_X][ y ][ 1 ][1];
-  	    u[t_next][ 0 ][ y ][N_Z+1][2] = u[t_next][N_X][ y ][ 1 ][2];
-  	    
-  	    // (N_X+1, y, 0)
-  	    p[t_next][N_X+1][ y ][0] = p[t_next][ 1 ][ y ][N_Z];
-  	    u[t_next][N_X+1][ y ][0][0] = u[t_next][ 1 ][ y ][N_Z][0];
-  	    u[t_next][N_X+1][ y ][0][1] = u[t_next][ 1 ][ y ][N_Z][1];
-  	    u[t_next][N_X+1][ y ][0][2] = u[t_next][ 1 ][ y ][N_Z][2];
-  	    
-  	}
+        {
+            // (0, y, 0) 
+            p[t_next][ 0 ][ y ][ 0 ] = p[t_next][N_X][y][N_Z];
+            u[t_next][ 0 ][ y ][ 0 ][0] = u[t_next][N_X][ y ][N_Z][0];
+            u[t_next][ 0 ][ y ][ 0 ][1] = u[t_next][N_X][ y ][N_Z][1];
+            u[t_next][ 0 ][ y ][ 0 ][2] = u[t_next][N_X][ y ][N_Z][2];
+          
+            // (N_X+1, y, N_Z+1)
+            p[t_next][N_X+1][ y ][N_Z+1] = p[t_next][ 1 ][ y ][  1  ];
+            u[t_next][N_X+1][ y ][N_Z+1][0] = u[t_next][ 1 ][ y ][  1  ][0];
+            u[t_next][N_X+1][ y ][N_Z+1][1] = u[t_next][ 1 ][ y ][  1  ][1];
+            u[t_next][N_X+1][ y ][N_Z+1][2] = u[t_next][ 1 ][ y ][  1  ][2];
+          
+            // (0, y, N_Z+1)
+            p[t_next][ 0 ][ y ][N_Z+1] = p[t_next][N_X][ y ][ 1 ];
+            u[t_next][ 0 ][ y ][N_Z+1][0] = u[t_next][N_X][ y ][ 1 ][0];
+            u[t_next][ 0 ][ y ][N_Z+1][1] = u[t_next][N_X][ y ][ 1 ][1];
+            u[t_next][ 0 ][ y ][N_Z+1][2] = u[t_next][N_X][ y ][ 1 ][2];
+          
+            // (N_X+1, y, 0)
+            p[t_next][N_X+1][ y ][0] = p[t_next][ 1 ][ y ][N_Z];
+            u[t_next][N_X+1][ y ][0][0] = u[t_next][ 1 ][ y ][N_Z][0];
+            u[t_next][N_X+1][ y ][0][1] = u[t_next][ 1 ][ y ][N_Z][1];
+            u[t_next][N_X+1][ y ][0][2] = u[t_next][ 1 ][ y ][N_Z][2];
+          
+        }
         
-  	// lines z: 4
+        // lines z: 4
         for( z = 1; z < N_Z+1; z++)
-  	{
-  	    // (0, 0, z) 
-  	    p[t_next][ 0 ][ 0 ][ z ] = p[t_next][N_X][N_Y][ z ];
-  	    u[t_next][ 0 ][ 0 ][ z ][0] = u[t_next][N_X][N_Y][ z ][0];
-  	    u[t_next][ 0 ][ 0 ][ z ][1] = u[t_next][N_X][N_Y][ z ][1];
-  	    u[t_next][ 0 ][ 0 ][ z ][2] = u[t_next][N_X][N_Y][ z ][2];
-  	    
-  	    // (N_X+1, N_Y+1, z)
-  	    p[t_next][N_X+1][N_Y+1][ z ] = p[t_next][ 1 ][  1  ][ z ];
-  	    u[t_next][N_X+1][N_Y+1][ z ][0] = u[t_next][ 1 ][  1  ][ z ][0];
-  	    u[t_next][N_X+1][N_Y+1][ z ][1] = u[t_next][ 1 ][  1  ][ z ][1];
-  	    u[t_next][N_X+1][N_Y+1][ z ][2] = u[t_next][ 1 ][  1  ][ z ][2];
-  	    
-  	    // (0, N_Y+1, z)
-  	    p[t_next][ 0 ][N_Y+1][ z ] = p[t_next][N_X][ 1 ][ z ];
-  	    u[t_next][ 0 ][N_Y+1][ z ][0] = u[t_next][N_X][ 1 ][ z ][0];
-  	    u[t_next][ 0 ][N_Y+1][ z ][1] = u[t_next][N_X][ 1 ][ z ][1];
-  	    u[t_next][ 0 ][N_Y+1][ z ][2] = u[t_next][N_X][ 1 ][ z ][2];
-  	    
-  	    // (N_X+1, 0, z)
-  	    p[t_next][N_X+1][ 0 ][ z ] = p[t_next][ 1 ][N_Y][ z ];
-  	    u[t_next][N_X+1][ 0 ][ z ][0] = u[t_next][ 1 ][N_Y][ z ][0];
-  	    u[t_next][N_X+1][ 0 ][ z ][1] = u[t_next][ 1 ][N_Y][ z ][1];
-  	    u[t_next][N_X+1][ 0 ][ z ][2] = u[t_next][ 1 ][N_Y][ z ][2];
-  	    
-  	}
-  	
-  	
-  	
-  	// points: 8
-  	
-  	// (0, 0, 0) <- (N_X, N_Y, N_Z)
-        p[t_next][ 0 ][ 0 ][ 0 ] = p[t_next][N_X][N_Y][N_Z];
-        u[t_next][ 0 ][ 0 ][ 0 ][0] = u[t_next][N_X][N_Y][N_Z][0];
-        u[t_next][ 0 ][ 0 ][ 0 ][1] = u[t_next][N_X][N_Y][N_Z][1];
-        u[t_next][ 0 ][ 0 ][ 0 ][2] = u[t_next][N_X][N_Y][N_Z][2];
-  	
-  	// (0, 0, N_Z+1) <- (N_X, N_Y, 1)
-        p[t_next][ 0 ][ 0 ][N_Z+1] = p[t_next][N_X][N_Y][ 1 ];
-        u[t_next][ 0 ][ 0 ][N_Z+1][0] = u[t_next][N_X][N_Y][ 1 ][0];
-        u[t_next][ 0 ][ 0 ][N_Z+1][1] = u[t_next][N_X][N_Y][ 1 ][1];
-        u[t_next][ 0 ][ 0 ][N_Z+1][2] = u[t_next][N_X][N_Y][ 1 ][2];
-  	
-  	// (0, N_Y+1, 0) <- (N_X, 1, N_Z)
-        p[t_next][ 0 ][N_Y+1][ 0 ] = p[t_next][N_X][ 1 ][N_Z];
-        u[t_next][ 0 ][N_Y+1][ 0 ][0] = u[t_next][N_X][ 1 ][N_Z][0];
-        u[t_next][ 0 ][N_Y+1][ 0 ][1] = u[t_next][N_X][ 1 ][N_Z][1];
-        u[t_next][ 0 ][N_Y+1][ 0 ][2] = u[t_next][N_X][ 1 ][N_Z][2];
-        
-  	// (0, N_Y+1, N_Z+1) <- (N_X, 1, 1)
-        p[t_next][ 0 ][N_Y+1][N_Z+1] = p[t_next][N_X][ 1 ][ 1 ];
-        u[t_next][ 0 ][N_Y+1][N_Z+1][0] = u[t_next][N_X][ 1 ][ 1 ][0];
-        u[t_next][ 0 ][N_Y+1][N_Z+1][1] = u[t_next][N_X][ 1 ][ 1 ][1];
-        u[t_next][ 0 ][N_Y+1][N_Z+1][2] = u[t_next][N_X][ 1 ][ 1 ][2];
-        
-  	// (N_X+1, 0, 0) <- (1, N_Y, N_Z)
-        p[t_next][N_X+1][ 0 ][ 0 ] = p[t_next][ 1 ][N_Y][N_Z];
-        u[t_next][N_X+1][ 0 ][ 0 ][0] = u[t_next][ 1 ][N_Y][N_Z][0];
-        u[t_next][N_X+1][ 0 ][ 0 ][1] = u[t_next][ 1 ][N_Y][N_Z][1];
-        u[t_next][N_X+1][ 0 ][ 0 ][2] = u[t_next][ 1 ][N_Y][N_Z][2];
-        
-  	// (N_X+1, 0, N_Z+1) <- (1, N_Y, 1)
-        p[t_next][N_X+1][ 0 ][N_Z+1] = p[t_next][ 1 ][N_Y][ 1 ];
-        u[t_next][N_X+1][ 0 ][N_Z+1][0] = u[t_next][ 1 ][N_Y][ 1 ][0];
-        u[t_next][N_X+1][ 0 ][N_Z+1][1] = u[t_next][ 1 ][N_Y][ 1 ][1];
-        u[t_next][N_X+1][ 0 ][N_Z+1][2] = u[t_next][ 1 ][N_Y][ 1 ][2];
-        
-  	// (N_X+1, N_Y+1, 0) <- (1, 1, N_Z)
-        p[t_next][N_X+1][N_Y+1][ 0 ] = p[t_next][ 1 ][ 1 ][N_Z];
-        u[t_next][N_X+1][N_Y+1][ 0 ][0] = u[t_next][ 1 ][ 1 ][N_Z][0];
-        u[t_next][N_X+1][N_Y+1][ 0 ][1] = u[t_next][ 1 ][ 1 ][N_Z][1];
-        u[t_next][N_X+1][N_Y+1][ 0 ][2] = u[t_next][ 1 ][ 1 ][N_Z][2];
-        
-  	// (N_X+1, N_Y+1, N_Z+1) <- (1, 1, 1)
-        p[t_next][N_X+1][N_Y+1][N_Z+1] = p[t_next][ 1 ][ 1 ][ 1 ];
-        u[t_next][N_X+1][N_Y+1][N_Z+1][0] = u[t_next][ 1 ][ 1 ][ 1 ][0];
-        u[t_next][N_X+1][N_Y+1][N_Z+1][1] = u[t_next][ 1 ][ 1 ][ 1 ][1];
-        u[t_next][N_X+1][N_Y+1][N_Z+1][2] = u[t_next][ 1 ][ 1 ][ 1 ][2];
-        
-        
+        {
+            // (0, 0, z) 
+            p[t_next][ 0 ][ 0 ][ z ] = p[t_next][N_X][N_Y][ z ];
+            u[t_next][ 0 ][ 0 ][ z ][0] = u[t_next][N_X][N_Y][ z ][0];
+            u[t_next][ 0 ][ 0 ][ z ][1] = u[t_next][N_X][N_Y][ z ][1];
+            u[t_next][ 0 ][ 0 ][ z ][2] = u[t_next][N_X][N_Y][ z ][2];
+          
+            // (N_X+1, N_Y+1, z)
+            p[t_next][N_X+1][N_Y+1][ z ] = p[t_next][ 1 ][  1  ][ z ];
+            u[t_next][N_X+1][N_Y+1][ z ][0] = u[t_next][ 1 ][  1  ][ z ][0];
+            u[t_next][N_X+1][N_Y+1][ z ][1] = u[t_next][ 1 ][  1  ][ z ][1];
+            u[t_next][N_X+1][N_Y+1][ z ][2] = u[t_next][ 1 ][  1  ][ z ][2];
+          
+            // (0, N_Y+1, z)
+            p[t_next][ 0 ][N_Y+1][ z ] = p[t_next][N_X][ 1 ][ z ];
+            u[t_next][ 0 ][N_Y+1][ z ][0] = u[t_next][N_X][ 1 ][ z ][0];
+            u[t_next][ 0 ][N_Y+1][ z ][1] = u[t_next][N_X][ 1 ][ z ][1];
+            u[t_next][ 0 ][N_Y+1][ z ][2] = u[t_next][N_X][ 1 ][ z ][2];
+          
+            // (N_X+1, 0, z)
+            p[t_next][N_X+1][ 0 ][ z ] = p[t_next][ 1 ][N_Y][ z ];
+            u[t_next][N_X+1][ 0 ][ z ][0] = u[t_next][ 1 ][N_Y][ z ][0];
+            u[t_next][N_X+1][ 0 ][ z ][1] = u[t_next][ 1 ][N_Y][ z ][1];
+            u[t_next][N_X+1][ 0 ][ z ][2] = u[t_next][ 1 ][N_Y][ z ][2];
+          
+        }
         
         //######################################################## end ############################################################
         //#########################################################################################################################
