@@ -34,10 +34,10 @@
 #include <unistd.h>
 #include <stdbool.h>
 
-#define T_MAX     5000
-#define N_X       10
-#define N_Y       10
-#define N_Z       10
+#define T_MAX     200
+#define N_X       30
+#define N_Y       30
+#define N_Z       30
 
 int xi_x[19] = { 0, 1,-1, 0, 0, 0, 0, 1,-1, 1,-1, 1,-1, 1,-1, 0, 0, 0, 0};
 int xi_y[19] = { 0, 0, 0, 1,-1, 0, 0, 1, 1,-1,-1, 0, 0, 0, 0, 1,-1, 1,-1};
@@ -95,7 +95,7 @@ double u_load[3] = {0, 0, 0};
 // this is a debug function
 void test()
 {
-    printf("\n\n\n>> time step = %d \n", t);
+    printf("\n>> step = %d ", t);
     
     // part to sum up rho globally
     double result = 0;
@@ -112,8 +112,7 @@ void test()
         }
     }
     
-    printf("   sum of all rho[x][y][z] = %e \n", result );
-    printf("\n_______________________________________________________________________________________________\n");
+    printf("   sum of all rho[x][y][z] = %e ", result );
 }
 
 void alpha_call(int a)
@@ -890,10 +889,10 @@ int main()
             u[t_next][ 0 ][ y ][ 0 ][2] = u[t_next][N_X][ y ][N_Z][2];
           
             // (N_X+1, y, N_Z+1)
-            p[t_next][N_X+1][ y ][N_Z+1] = p[t_next][ 1 ][ y ][  1  ];
-            u[t_next][N_X+1][ y ][N_Z+1][0] = u[t_next][ 1 ][ y ][  1  ][0];
-            u[t_next][N_X+1][ y ][N_Z+1][1] = u[t_next][ 1 ][ y ][  1  ][1];
-            u[t_next][N_X+1][ y ][N_Z+1][2] = u[t_next][ 1 ][ y ][  1  ][2];
+            p[t_next][N_X+1][ y ][N_Z+1] = p[t_next][ 1 ][ y ][ 1 ];
+            u[t_next][N_X+1][ y ][N_Z+1][0] = u[t_next][ 1 ][ y ][ 1 ][0];
+            u[t_next][N_X+1][ y ][N_Z+1][1] = u[t_next][ 1 ][ y ][ 1 ][1];
+            u[t_next][N_X+1][ y ][N_Z+1][2] = u[t_next][ 1 ][ y ][ 1 ][2];
           
             // (0, y, N_Z+1)
             p[t_next][ 0 ][ y ][N_Z+1] = p[t_next][N_X][ y ][ 1 ];
@@ -919,10 +918,10 @@ int main()
             u[t_next][ 0 ][ 0 ][ z ][2] = u[t_next][N_X][N_Y][ z ][2];
           
             // (N_X+1, N_Y+1, z)
-            p[t_next][N_X+1][N_Y+1][ z ] = p[t_next][ 1 ][  1  ][ z ];
-            u[t_next][N_X+1][N_Y+1][ z ][0] = u[t_next][ 1 ][  1  ][ z ][0];
-            u[t_next][N_X+1][N_Y+1][ z ][1] = u[t_next][ 1 ][  1  ][ z ][1];
-            u[t_next][N_X+1][N_Y+1][ z ][2] = u[t_next][ 1 ][  1  ][ z ][2];
+            p[t_next][N_X+1][N_Y+1][ z ] = p[t_next][ 1 ][ 1 ][ z ];
+            u[t_next][N_X+1][N_Y+1][ z ][0] = u[t_next][ 1 ][ 1 ][ z ][0];
+            u[t_next][N_X+1][N_Y+1][ z ][1] = u[t_next][ 1 ][ 1 ][ z ][1];
+            u[t_next][N_X+1][N_Y+1][ z ][2] = u[t_next][ 1 ][ 1 ][ z ][2];
           
             // (0, N_Y+1, z)
             p[t_next][ 0 ][N_Y+1][ z ] = p[t_next][N_X][ 1 ][ z ];
