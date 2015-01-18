@@ -1,0 +1,13 @@
+#include <stdio.h>
+
+
+int main()
+{
+    FILE *fileout;
+    fileout = fopen("log", "r");
+    
+    
+    return 0;
+}
+
+

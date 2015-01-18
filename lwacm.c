@@ -1,4 +1,4 @@
-/*  v 0.3
+/*  v 0.4
  *  Link-wise Artificial Compressibility Method
  *  by Yifan Yang with supervisor Thomas Zeiser @ FAU
  *                                             01.12.2014
@@ -32,12 +32,12 @@
 #include <stdio.h>
 #include <time.h>
 #include <unistd.h>
-#include <stdbool.h>
 
-#define T_MAX     200
-#define N_X       30
-#define N_Y       30
-#define N_Z       30
+// define domain size and time steps
+#define T_MAX     500
+#define N_X       10
+#define N_Y       10
+#define N_Z       10
 
 int xi_x[19] = { 0, 1,-1, 0, 0, 0, 0, 1,-1, 1,-1, 1,-1, 1,-1, 0, 0, 0, 0};
 int xi_y[19] = { 0, 0, 0, 1,-1, 0, 0, 1, 1,-1,-1, 0, 0, 0, 0, 1,-1, 1,-1};
@@ -64,7 +64,10 @@ int t_now = 0;
 int t_next = 0;
 
 //time parameter
-clock_t start_t, loop_t, end_t, total_t;
+clock_t start_t, end_t;
+double total_t;
+double domain_size;
+double mlups;
 
 // array to store value of p, t=0 is t, t=1 is t+1
 // use x+2, y+2, z+2 to avoid illegal access like p(x-xi_alpha), same for u[]
@@ -93,7 +96,7 @@ double p_load = 0;
 double u_load[3] = {0, 0, 0};
 
 // this is a debug function
-void test()
+void sum_up_p()
 {
     printf("\n>> step = %d ", t);
     
@@ -115,10 +118,31 @@ void test()
     printf("   sum of all rho[x][y][z] = %e ", result );
 }
 
+void progress_bar()
+{   
+    int j = 0;
+    
+    i = t*100/(T_MAX-1);
+    
+    if(i < 10) { printf("   [00%d] ", i); }    
+    else if(i < 100){ printf("   [0%d] ", i); }
+    else { printf("   [%d] ", i); }
+        
+    for(j = 0; j < i; ++j)
+    {
+        if(j == i-1){ printf(">"); }
+        else{ printf("="); }
+    }
+        
+    printf("\r");
+    
+    fflush(stdout);
+}
+
 void alpha_call(int a)
 {
   int xx,yy,zz;
-  bool flag = false;
+  //bool flag = false;
   
   xx=x-xi_x[a];
   yy=y-xi_y[a];
@@ -133,9 +157,7 @@ void alpha_call(int a)
   if ( yy == N_Y+1 ) { yy=1; flag = true; }
   if ( zz == N_Z+1 ) { zz=1; flag = true; }
   
-  
-  //if(flag) { printf("\n>> access bc coord,  ( %d, %d, %d) <- (%d, %d, %d)", x-xi_x[a], y-xi_y[a], z-xi_z[a], xx, yy, zz ); }
-  
+  if(flag) { printf("\n>> access bc coord,  ( %d, %d, %d) <- (%d, %d, %d)", x-xi_x[a], y-xi_y[a], z-xi_z[a], xx, yy, zz ); }
   
   */
 
@@ -698,14 +720,17 @@ void alpha_18_call()
 }
 
 
-int main()
+int main( int argc, char *argv[] )
 {
-    start_t = clock();
     
-    printf("\n>> program start...\n");
+    FILE *fileout;
+    fileout = fopen("log", "a+");
+    
+    printf("\n>> program start\n");
     printf("\n   domain size : N_X = %d, N_Y = %d, N_Z = %d\n", N_X, N_Y, N_Z );
     printf("\n   timestep required : T_MAX = %d\n\n", T_MAX );
     
+    start_t = clock();
     
     // initialize p and u
     for( x = 0; x < N_X+2; x++)
@@ -735,7 +760,6 @@ int main()
     // for all time step t
     for( t = 0; t < T_MAX; t++)
     {
-        
         // for all mesh point x, calculate p[t_next][] and u[t_next][]
         for( x = 1; x < N_X+1; x++)
         {
@@ -743,11 +767,8 @@ int main()
           {
             for( z = 1; z < N_Z+1; z++)
             {
-                
-                
                 // for all alpha from 0 to 18, calculate f[] for each node
-                
-                /*
+                /* test function for alpha
                 for( a = 0; a < 19; a++)
                 {
                     alpha_call(a);
@@ -774,24 +795,19 @@ int main()
                 alpha_17_call();
                 alpha_18_call();
                 
-                
                 // step 11, compute p(x, t+1)
                 p_load = f[0]+f[1]+f[2]+f[3]+f[4]+f[5]+f[6]+f[7]+f[8]+f[9]+f[10]+f[11]+f[12]+f[13]+f[14]+f[15]+f[16]+f[17]+f[18];
-                
                 p[t_next][x][y][z] = p_load;
                 
                 // step 12, compute u(x, t+1)
                 u[t_next][x][y][z][0] = ( f[1]-f[2]+f[7]-f[8]+f[9]-f[10]+f[11]-f[12]+f[13]-f[14] )/p_load;
                 u[t_next][x][y][z][1] = ( f[3]-f[4]+f[7]+f[8]-f[9]-f[10]+f[15]-f[16]+f[17]-f[18] )/p_load;
                 u[t_next][x][y][z][2] = ( f[5]-f[6]+f[11]+f[12]-f[13]-f[14]+f[15]+f[16]-f[17]-f[18] )/p_load;
-                
             }
           }
         }
         
-        
-        test();
-        
+        progress_bar();
         
         //#########################################################################################################################
         //##################################################### start #############################################################
@@ -802,33 +818,32 @@ int main()
             for( y = 1; y < N_Y+1; y++)
             {
                 p[t_next][ x ][ y ][ 0 ] = p[t_next][ x ][ y ][N_Z];
-                u[t_next][ x ][ y ][ 0 ][0] = u[t_next][ x ][ y ][N_Z][0];
-                u[t_next][ x ][ y ][ 0 ][1] = u[t_next][ x ][ y ][N_Z][1];
-                u[t_next][ x ][ y ][ 0 ][2] = u[t_next][ x ][ y ][N_Z][2];
+                u[t_next][ x ][ y ][ 0 ][ 0 ] = u[t_next][ x ][ y ][N_Z][ 0 ];
+                u[t_next][ x ][ y ][ 0 ][ 1 ] = u[t_next][ x ][ y ][N_Z][ 1 ];
+                u[t_next][ x ][ y ][ 0 ][ 2 ] = u[t_next][ x ][ y ][N_Z][ 2 ];
           
                 p[t_next][ x ][ y ][N_Z+1] = p[t_next][ x ][ y ][1];
-                u[t_next][ x ][ y ][N_Z+1][0] = u[t_next][ x ][ y ][1][0];
-                u[t_next][ x ][ y ][N_Z+1][1] = u[t_next][ x ][ y ][1][1];
-                u[t_next][ x ][ y ][N_Z+1][2] = u[t_next][ x ][ y ][1][2];
+                u[t_next][ x ][ y ][N_Z+1][ 0 ] = u[t_next][ x ][ y ][ 1 ][ 0 ];
+                u[t_next][ x ][ y ][N_Z+1][ 1 ] = u[t_next][ x ][ y ][ 1 ][ 1 ];
+                u[t_next][ x ][ y ][N_Z+1][ 2 ] = u[t_next][ x ][ y ][ 1 ][ 2 ];
           
             }
         }
         
-        // surfaces: xz                  
+        // surfaces: xz
         for( x = 1; x < N_X+1; x++)
         {
             for( z = 1; z < N_Z+1; z++)
             {
                 p[t_next][ x ][ 0 ][ z ] = p[t_next][ x ][N_Y][ z ];
-                u[t_next][ x ][ 0 ][ z ][0] = u[t_next][ x ][N_Y][ z ][0];
-                u[t_next][ x ][ 0 ][ z ][1] = u[t_next][ x ][N_Y][ z ][1];
-                u[t_next][ x ][ 0 ][ z ][2] = u[t_next][ x ][N_Y][ z ][2];
+                u[t_next][ x ][ 0 ][ z ][ 0 ] = u[t_next][ x ][N_Y][ z ][ 0 ];
+                u[t_next][ x ][ 0 ][ z ][ 1 ] = u[t_next][ x ][N_Y][ z ][ 1 ];
+                u[t_next][ x ][ 0 ][ z ][ 2 ] = u[t_next][ x ][N_Y][ z ][ 2 ];
           
                 p[t_next][ x ][N_Y+1][ z ] = p[t_next][ x ][ 1 ][ z ];
-                u[t_next][ x ][N_Y+1][ z ][0] = u[t_next][ x ][ 1 ][ z ][0];
-                u[t_next][ x ][N_Y+1][ z ][1] = u[t_next][ x ][ 1 ][ z ][1];
-                u[t_next][ x ][N_Y+1][ z ][2] = u[t_next][ x ][ 1 ][ z ][2];
-          
+                u[t_next][ x ][N_Y+1][ z ][ 0 ] = u[t_next][ x ][ 1 ][ z ][ 0 ];
+                u[t_next][ x ][N_Y+1][ z ][ 1 ] = u[t_next][ x ][ 1 ][ z ][ 1 ];
+                u[t_next][ x ][N_Y+1][ z ][ 2 ] = u[t_next][ x ][ 1 ][ z ][ 2 ];
             }
         }
         
@@ -838,15 +853,14 @@ int main()
             for( z = 1; z < N_Z+1; z++)
             {
                 p[t_next][ 0 ][ y ][ z ] = p[t_next][N_X][ y ][ z ];
-                u[t_next][ 0 ][ y ][ z ][0] = u[t_next][N_X][ y ][ z ][0];
-                u[t_next][ 0 ][ y ][ z ][1] = u[t_next][N_X][ y ][ z ][1];
-                u[t_next][ 0 ][ y ][ z ][2] = u[t_next][N_X][ y ][ z ][2];
+                u[t_next][ 0 ][ y ][ z ][ 0 ] = u[t_next][N_X][ y ][ z ][ 0 ];
+                u[t_next][ 0 ][ y ][ z ][ 1 ] = u[t_next][N_X][ y ][ z ][ 1 ];
+                u[t_next][ 0 ][ y ][ z ][ 2 ] = u[t_next][N_X][ y ][ z ][ 2 ];
           
                 p[t_next][N_X+1][ y ][ z ] = p[t_next][ 1 ][ y ][ z ];
-                u[t_next][N_X+1][ y ][ z ][0] = u[t_next][ 1 ][ y ][ z ][0];
-                u[t_next][N_X+1][ y ][ z ][1] = u[t_next][ 1 ][ y ][ z ][1];
-                u[t_next][N_X+1][ y ][ z ][2] = u[t_next][ 1 ][ y ][ z ][2];
-            
+                u[t_next][N_X+1][ y ][ z ][ 0 ] = u[t_next][ 1 ][ y ][ z ][ 0 ];
+                u[t_next][N_X+1][ y ][ z ][ 1 ] = u[t_next][ 1 ][ y ][ z ][ 1 ];
+                u[t_next][N_X+1][ y ][ z ][ 2 ] = u[t_next][ 1 ][ y ][ z ][ 2 ];
             }
         }
       
@@ -856,27 +870,27 @@ int main()
         {
             // (x, 0, 0) 
             p[t_next][ x ][ 0 ][ 0 ] = p[t_next][ x ][N_Y][N_Z];
-            u[t_next][ x ][ 0 ][ 0 ][0] = u[t_next][ x ][N_Y][N_Z][0];
-            u[t_next][ x ][ 0 ][ 0 ][1] = u[t_next][ x ][N_Y][N_Z][1];
-            u[t_next][ x ][ 0 ][ 0 ][2] = u[t_next][ x ][N_Y][N_Z][2];
+            u[t_next][ x ][ 0 ][ 0 ][ 0 ] = u[t_next][ x ][N_Y][N_Z][ 0 ];
+            u[t_next][ x ][ 0 ][ 0 ][ 1 ] = u[t_next][ x ][N_Y][N_Z][ 1 ];
+            u[t_next][ x ][ 0 ][ 0 ][ 2 ] = u[t_next][ x ][N_Y][N_Z][ 2 ];
           
             // (x, N_Y+1, N_Z+1)
             p[t_next][ x ][N_Y+1][N_Z+1] = p[t_next][ x ][ 1 ][ 1 ];
-            u[t_next][ x ][N_Y+1][N_Z+1][0] = u[t_next][ x ][ 1 ][ 1 ][0];
-            u[t_next][ x ][N_Y+1][N_Z+1][1] = u[t_next][ x ][ 1 ][ 1 ][1];
-            u[t_next][ x ][N_Y+1][N_Z+1][2] = u[t_next][ x ][ 1 ][ 1 ][2];
+            u[t_next][ x ][N_Y+1][N_Z+1][ 0 ] = u[t_next][ x ][ 1 ][ 1 ][ 0 ];
+            u[t_next][ x ][N_Y+1][N_Z+1][ 1 ] = u[t_next][ x ][ 1 ][ 1 ][ 1 ];
+            u[t_next][ x ][N_Y+1][N_Z+1][ 2 ] = u[t_next][ x ][ 1 ][ 1 ][ 2 ];
           
             // (x, 0, N_Z+1)
             p[t_next][ x ][ 0 ][N_Z+1] = p[t_next][ x ][N_Y][ 1 ];
-            u[t_next][ x ][ 0 ][N_Z+1][0] = u[t_next][ x ][N_Y][ 1 ][0];
-            u[t_next][ x ][ 0 ][N_Z+1][1] = u[t_next][ x ][N_Y][ 1 ][1];
-            u[t_next][ x ][ 0 ][N_Z+1][2] = u[t_next][ x ][N_Y][ 1 ][2];
+            u[t_next][ x ][ 0 ][N_Z+1][ 0 ] = u[t_next][ x ][N_Y][ 1 ][ 0 ];
+            u[t_next][ x ][ 0 ][N_Z+1][ 1 ] = u[t_next][ x ][N_Y][ 1 ][ 1 ];
+            u[t_next][ x ][ 0 ][N_Z+1][ 2 ] = u[t_next][ x ][N_Y][ 1 ][ 2 ];
           
             // (x, N_Y+1, 0)
             p[t_next][ x ][N_Y+1][ 0 ] = p[t_next][ x ][ 1 ][N_Z];
-            u[t_next][ x ][N_Y+1][ 0 ][0] = u[t_next][ x ][ 1 ][N_Z][0];
-            u[t_next][ x ][N_Y+1][ 0 ][1] = u[t_next][ x ][ 1 ][N_Z][1];
-            u[t_next][ x ][N_Y+1][ 0 ][2] = u[t_next][ x ][ 1 ][N_Z][2];
+            u[t_next][ x ][N_Y+1][ 0 ][ 0 ] = u[t_next][ x ][ 1 ][N_Z][ 0 ];
+            u[t_next][ x ][N_Y+1][ 0 ][ 1 ] = u[t_next][ x ][ 1 ][N_Z][ 1 ];
+            u[t_next][ x ][N_Y+1][ 0 ][ 2 ] = u[t_next][ x ][ 1 ][N_Z][ 2 ];
         }
         
         // lines y: 4
@@ -884,28 +898,27 @@ int main()
         {
             // (0, y, 0) 
             p[t_next][ 0 ][ y ][ 0 ] = p[t_next][N_X][y][N_Z];
-            u[t_next][ 0 ][ y ][ 0 ][0] = u[t_next][N_X][ y ][N_Z][0];
-            u[t_next][ 0 ][ y ][ 0 ][1] = u[t_next][N_X][ y ][N_Z][1];
-            u[t_next][ 0 ][ y ][ 0 ][2] = u[t_next][N_X][ y ][N_Z][2];
+            u[t_next][ 0 ][ y ][ 0 ][ 0 ] = u[t_next][N_X][ y ][N_Z][ 0 ];
+            u[t_next][ 0 ][ y ][ 0 ][ 1 ] = u[t_next][N_X][ y ][N_Z][ 1 ];
+            u[t_next][ 0 ][ y ][ 0 ][ 2 ] = u[t_next][N_X][ y ][N_Z][ 2 ];
           
             // (N_X+1, y, N_Z+1)
             p[t_next][N_X+1][ y ][N_Z+1] = p[t_next][ 1 ][ y ][ 1 ];
-            u[t_next][N_X+1][ y ][N_Z+1][0] = u[t_next][ 1 ][ y ][ 1 ][0];
-            u[t_next][N_X+1][ y ][N_Z+1][1] = u[t_next][ 1 ][ y ][ 1 ][1];
-            u[t_next][N_X+1][ y ][N_Z+1][2] = u[t_next][ 1 ][ y ][ 1 ][2];
+            u[t_next][N_X+1][ y ][N_Z+1][ 0 ] = u[t_next][ 1 ][ y ][ 1 ][ 0 ];
+            u[t_next][N_X+1][ y ][N_Z+1][ 1 ] = u[t_next][ 1 ][ y ][ 1 ][ 1 ];
+            u[t_next][N_X+1][ y ][N_Z+1][ 2 ] = u[t_next][ 1 ][ y ][ 1 ][ 2 ];
           
             // (0, y, N_Z+1)
             p[t_next][ 0 ][ y ][N_Z+1] = p[t_next][N_X][ y ][ 1 ];
-            u[t_next][ 0 ][ y ][N_Z+1][0] = u[t_next][N_X][ y ][ 1 ][0];
-            u[t_next][ 0 ][ y ][N_Z+1][1] = u[t_next][N_X][ y ][ 1 ][1];
-            u[t_next][ 0 ][ y ][N_Z+1][2] = u[t_next][N_X][ y ][ 1 ][2];
+            u[t_next][ 0 ][ y ][N_Z+1][ 0 ] = u[t_next][N_X][ y ][ 1 ][ 0 ];
+            u[t_next][ 0 ][ y ][N_Z+1][ 1 ] = u[t_next][N_X][ y ][ 1 ][ 1 ];
+            u[t_next][ 0 ][ y ][N_Z+1][ 2 ] = u[t_next][N_X][ y ][ 1 ][ 2 ];
           
             // (N_X+1, y, 0)
-            p[t_next][N_X+1][ y ][0] = p[t_next][ 1 ][ y ][N_Z];
-            u[t_next][N_X+1][ y ][0][0] = u[t_next][ 1 ][ y ][N_Z][0];
-            u[t_next][N_X+1][ y ][0][1] = u[t_next][ 1 ][ y ][N_Z][1];
-            u[t_next][N_X+1][ y ][0][2] = u[t_next][ 1 ][ y ][N_Z][2];
-          
+            p[t_next][N_X+1][ y ][ 0 ] = p[t_next][ 1 ][ y ][N_Z];
+            u[t_next][N_X+1][ y ][ 0 ][ 0 ] = u[t_next][ 1 ][ y ][N_Z][ 0 ];
+            u[t_next][N_X+1][ y ][ 0 ][ 1 ] = u[t_next][ 1 ][ y ][N_Z][ 1 ];
+            u[t_next][N_X+1][ y ][ 0 ][ 2 ] = u[t_next][ 1 ][ y ][N_Z][ 2 ];
         }
         
         // lines z: 4
@@ -913,53 +926,53 @@ int main()
         {
             // (0, 0, z) 
             p[t_next][ 0 ][ 0 ][ z ] = p[t_next][N_X][N_Y][ z ];
-            u[t_next][ 0 ][ 0 ][ z ][0] = u[t_next][N_X][N_Y][ z ][0];
-            u[t_next][ 0 ][ 0 ][ z ][1] = u[t_next][N_X][N_Y][ z ][1];
-            u[t_next][ 0 ][ 0 ][ z ][2] = u[t_next][N_X][N_Y][ z ][2];
+            u[t_next][ 0 ][ 0 ][ z ][ 0 ] = u[t_next][N_X][N_Y][ z ][ 0 ];
+            u[t_next][ 0 ][ 0 ][ z ][ 1 ] = u[t_next][N_X][N_Y][ z ][ 1 ];
+            u[t_next][ 0 ][ 0 ][ z ][ 2 ] = u[t_next][N_X][N_Y][ z ][ 2 ];
           
             // (N_X+1, N_Y+1, z)
             p[t_next][N_X+1][N_Y+1][ z ] = p[t_next][ 1 ][ 1 ][ z ];
-            u[t_next][N_X+1][N_Y+1][ z ][0] = u[t_next][ 1 ][ 1 ][ z ][0];
-            u[t_next][N_X+1][N_Y+1][ z ][1] = u[t_next][ 1 ][ 1 ][ z ][1];
-            u[t_next][N_X+1][N_Y+1][ z ][2] = u[t_next][ 1 ][ 1 ][ z ][2];
+            u[t_next][N_X+1][N_Y+1][ z ][ 0 ] = u[t_next][ 1 ][ 1 ][ z ][ 0 ];
+            u[t_next][N_X+1][N_Y+1][ z ][ 1 ] = u[t_next][ 1 ][ 1 ][ z ][ 1 ];
+            u[t_next][N_X+1][N_Y+1][ z ][ 2 ] = u[t_next][ 1 ][ 1 ][ z ][ 2 ];
           
             // (0, N_Y+1, z)
             p[t_next][ 0 ][N_Y+1][ z ] = p[t_next][N_X][ 1 ][ z ];
-            u[t_next][ 0 ][N_Y+1][ z ][0] = u[t_next][N_X][ 1 ][ z ][0];
-            u[t_next][ 0 ][N_Y+1][ z ][1] = u[t_next][N_X][ 1 ][ z ][1];
-            u[t_next][ 0 ][N_Y+1][ z ][2] = u[t_next][N_X][ 1 ][ z ][2];
+            u[t_next][ 0 ][N_Y+1][ z ][ 0 ] = u[t_next][N_X][ 1 ][ z ][ 0 ];
+            u[t_next][ 0 ][N_Y+1][ z ][ 1 ] = u[t_next][N_X][ 1 ][ z ][ 1 ];
+            u[t_next][ 0 ][N_Y+1][ z ][ 2 ] = u[t_next][N_X][ 1 ][ z ][ 2 ];
           
             // (N_X+1, 0, z)
             p[t_next][N_X+1][ 0 ][ z ] = p[t_next][ 1 ][N_Y][ z ];
-            u[t_next][N_X+1][ 0 ][ z ][0] = u[t_next][ 1 ][N_Y][ z ][0];
-            u[t_next][N_X+1][ 0 ][ z ][1] = u[t_next][ 1 ][N_Y][ z ][1];
-            u[t_next][N_X+1][ 0 ][ z ][2] = u[t_next][ 1 ][N_Y][ z ][2];
-          
+            u[t_next][N_X+1][ 0 ][ z ][ 0 ] = u[t_next][ 1 ][N_Y][ z ][ 0 ];
+            u[t_next][N_X+1][ 0 ][ z ][ 1 ] = u[t_next][ 1 ][N_Y][ z ][ 1 ];
+            u[t_next][N_X+1][ 0 ][ z ][ 2 ] = u[t_next][ 1 ][N_Y][ z ][ 2 ];
         }
         
         //######################################################## end ############################################################
         //#########################################################################################################################
         
-        
-        
-        
         // toggle t_now and t_next
         t_now  = 1-t_now;
-        t_next = 1-t_next; 
-        
+        t_next = 1-t_next;
         
     }
     
     end_t = clock();
+    total_t = (double)(end_t-start_t) / CLOCKS_PER_SEC;
     
-    total_t = (end_t - start_t) / CLOCKS_PER_SEC;
+    domain_size = N_X * N_Y * N_Z * T_MAX;
+    mlups = domain_size/total_t/1000000.0;
     
-    printf("\n   Total time taken by CPU: %f seconds\n", (double)total_t  );
-    printf("   MLUps =  %f \n\n", (N_X * N_Y * N_Z * T_MAX)/(double)total_t/1000000.0  );
+    printf("\n\n>> loop finished\n");
+    printf("\n   total runtime: %f seconds\n", total_t );
+    printf("   domain size: %f\n", domain_size );
+    printf("   MLUps: %f\n\n", mlups );
+    
+    fprintf(fileout, "%f    %f    %f\n", domain_size, total_t, mlups);
+    fclose(fileout);
     
     return 0;
 }
-
-
 
 
