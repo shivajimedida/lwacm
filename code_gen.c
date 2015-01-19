@@ -37,10 +37,16 @@ int main()
     
     fclose(filein);
     
+    // define the run script to run all programs
+    FILE *filerun;
+    filerun = fopen("run.sh", "w+");    
+    char runname[100];
     
-    printf(">> start generating source code\n");
+    
     
     // output files
+    printf(">> start generating source code\n");
+    
     long domain = 0;
     char filename[100];
     
@@ -57,7 +63,8 @@ int main()
         domain = t_max * n_x * n_y * n_z;
         
         // make new filename
-        sprintf(filename, "lwacm_%ld.c", domain);
+        sprintf(filename, "lwacm_run_%ld.c", domain);
+        sprintf(runname, "./lwacm_run_%ld\n", domain);
         
         // write to new file
         FILE *fileout;
@@ -86,9 +93,14 @@ int main()
         fputs(buffer, fileout);
         
         fclose(fileout);
+        
+        fputs(runname, filerun);
     
     }
     
+    
+    fclose(filerun);
+     
     printf(">> all files are created !\n");
     
     return 0;

@@ -7,16 +7,52 @@ by Yifan Yang with supervisor Thomas Zeiser @ FAU   01.12.2014
 
 The source code is free, do whatever you want.
 
+________________________________________________________________________________________________
 
-to do:
+>> project description
+   
+   the goal of this project is to implement the lwacm in C and optmize it 
 
-add time measurement before and after the iteration loop and print the number of lattice site
-updates per second, i.e. (N_X*N_Y*N_Z*T_MAX) / Delta_t. A nice graph also would be
-performance as function of the domain size.
+>> file description
+   
+   1, lwacm.c : original source code, after the program teminates, the performance date will be 
+      written into file 'log', with the format as: [domain_size]  [run_time]  [MLUps]
+      
+      e.g  '500000.000000    0.398274    1.255417'
+      
+   2, lwacm_raw : soure code without domain definition
+   
+   3, code_gen.c : the code generator that will add the domain size to 'lwacm_raw', and generate
+      a new source file named 'lwacm_run_[domain_size].c' ([domain_size] is a integer).
+      After that, a 'run.sh' will be generated to run all excutables one by one.
 
+>> run guide:
+
+        [command]          [description]
+        
+   1,   make               compile code_gen
+   2,   ./code_gen         generate all source code for different domain size and run.sh
+   3,   make               compile all source codes
+   4,   chmod +x run.sh    make the script executable
+   5,   ./run.sh           run all programs
+   
+   
+   wait until all program terminates, and all performance data can be found in 'log'.
+   
+   Note: data in file 'log' are not ordered. to order it, we can use:
+   
+   6,   sort -n +0 -1 log > log2
+   7,   make clean         this will delete all generated files except 'log' 
+   
 ________________________________________________________________________________________________
 
 change log:
+
+v0.4
+1, add the code generator to generate the source code for different domain size
+2, modify the make file to compile all source codes
+3, add run.sh script to excute all excutables
+4, add MLUps measurement for the code
 
 v0.3
 1, fix the boundary condition code, now the sun of p is stable all the time
@@ -74,7 +110,9 @@ Old questioins:
 8, if we need to copy data from p[1][] to p[0][], how about just use *memcpy() *directly?
    memcpy is evil, too. It causes the same amount of data (memory) traffic as plain C statements.
 
-
+9, add time measurement before and after the iteration loop and print the number of lattice site
+   updates per second, i.e. (N_X*N_Y*N_Z*T_MAX) / Delta_t. A nice graph also would be
+   performance as function of the domain size.
 
 
 
