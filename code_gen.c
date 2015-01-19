@@ -53,11 +53,11 @@ int main()
     
     for(i = 1; i < 100; i++)
     {
-        t_max = 2000/i;
+        t_max = i*100;
         
-        n_x = i;
-        n_y = i;
-        n_z = i;
+        n_x = 10;
+        n_y = 10;
+        n_z = 10;
         
         // calculate domain
         domain = t_max * n_x * n_y * n_z;
