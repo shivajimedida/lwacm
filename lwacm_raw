@@ -847,7 +847,7 @@ int main( int argc, char *argv[] )
     domain_size = N_X * N_Y * N_Z * T_MAX;
     mlups = domain_size/total_t/1000000.0;
     
-    printf("\n\n>> loop finished\n");
+    printf("\n\n   >> loop finished\n");
     printf("\n   total runtime: %f seconds\n", total_t );
     printf("   domain size: %f\n", domain_size );
     printf("   MLUps: %f\n\n", mlups );
