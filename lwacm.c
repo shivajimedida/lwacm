@@ -66,11 +66,11 @@ int t_next = 0;
 //time parameter
 time_t begin, end;
 clock_t start_t, end_t;
-double seconds;
+double sec_real, sec_cpu;
 
 //performance parameter
-double domain_size;
-double mlups;
+double domain, domain_size;
+double mlups_cpu, mlups_real;
 
 // array to store value of p, t=0 is t, t=1 is t+1
 // use x+2, y+2, z+2 to avoid illegal access like p(x-xi_alpha), same for u[]
@@ -759,7 +759,7 @@ int main( int argc, char *argv[] )
     t_next = 1;
     
     // record the start time
-    //time(&begin);
+    time(&begin);
     start_t = clock();
     
     // for all time step t
@@ -812,7 +812,7 @@ int main( int argc, char *argv[] )
           }
         }
         
-        progress_bar();
+        //progress_bar();
         
         //#########################################################################################################################
         //##################################################### start #############################################################
@@ -963,20 +963,24 @@ int main( int argc, char *argv[] )
     }
     
     // record the end time
-    //time(&end);
-    //seconds = difftime(end, begin);
+    time(&end);
+    sec_real = difftime(end, begin);
     
     end_t = clock();
-    seconds = (double)(end_t-start_t) / CLOCKS_PER_SEC;
+    sec_cpu = (double)(end_t-start_t) / CLOCKS_PER_SEC;
     
+    domain = N_X * N_Y * N_Z;
     domain_size = N_X * N_Y * N_Z * T_MAX;
-    mlups = domain_size/seconds/1000000.0;
+    mlups_real = domain_size/sec_real/1000000.0;
+    mlups_cpu = domain_size/sec_cpu/1000000.0;
     
-    printf("\n   total runtime: %f seconds\n", seconds );
+    printf("\n   real runtime: %f seconds\n", sec_real );
+    printf("   cpu  runtime: %f seconds\n", sec_cpu );
     printf("   domain size: %f\n", domain_size );
-    printf("   MLUps: %f\n\n", mlups );
+    printf("   MLUps(CPU): %f\n", mlups_cpu );
+    printf("   MLUps(Real): %f\n\n", mlups_real );
     
-    fprintf(fileout, "%f    %f    %f\n", domain_size, seconds, mlups);
+    fprintf(fileout, "%f    %f    %f    %f    %f\n", domain, sec_real, sec_cpu, mlups_cpu, mlups_real);
     fclose(fileout);
     
     return 0;

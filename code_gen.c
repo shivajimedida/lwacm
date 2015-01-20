@@ -48,7 +48,7 @@ int main()
     
     for(i = 5; i < 100; i++)
     {
-        t_max = 10000000/(i*i*i);
+        t_max = 20000000/(i*i*i);
         
         n_x = i;
         n_y = i;
@@ -87,6 +87,8 @@ int main()
         fclose(fileout);
         
         fputs(runname, filerun);
+        
+        printf("lwacm_run_%d_%d.c ready\n", n_x, t_max);
     
     }
     
