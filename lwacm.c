@@ -34,10 +34,10 @@
 #include <unistd.h>
 
 // define domain size and time steps
-#define T_MAX     500
-#define N_X       10
-#define N_Y       10
-#define N_Z       10
+#define T_MAX     10
+#define N_X       100
+#define N_Y       100
+#define N_Z       100
 
 int xi_x[19] = { 0, 1,-1, 0, 0, 0, 0, 1,-1, 1,-1, 1,-1, 1,-1, 0, 0, 0, 0};
 int xi_y[19] = { 0, 0, 0, 1,-1, 0, 0, 1, 1,-1,-1, 0, 0, 0, 0, 1,-1, 1,-1};
@@ -64,8 +64,11 @@ int t_now = 0;
 int t_next = 0;
 
 //time parameter
+time_t begin, end;
 clock_t start_t, end_t;
-double total_t;
+double seconds;
+
+//performance parameter
 double domain_size;
 double mlups;
 
@@ -728,9 +731,7 @@ int main( int argc, char *argv[] )
     
     printf("\n>> program start\n");
     printf("\n   domain size : N_X = %d, N_Y = %d, N_Z = %d\n", N_X, N_Y, N_Z );
-    printf("\n   timestep required : T_MAX = %d\n\n", T_MAX );
-    
-    start_t = clock();
+    printf("\n   timestep required : T_MAX = %d\n", T_MAX );
     
     // initialize p and u
     for( x = 0; x < N_X+2; x++)
@@ -756,6 +757,10 @@ int main( int argc, char *argv[] )
     // initialize toggle flag
     t_now = 0;
     t_next = 1;
+    
+    // record the start time
+    //time(&begin);
+    start_t = clock();
     
     // for all time step t
     for( t = 0; t < T_MAX; t++)
@@ -955,21 +960,23 @@ int main( int argc, char *argv[] )
         // toggle t_now and t_next
         t_now  = 1-t_now;
         t_next = 1-t_next;
-        
     }
     
+    // record the end time
+    //time(&end);
+    //seconds = difftime(end, begin);
+    
     end_t = clock();
-    total_t = (double)(end_t-start_t) / CLOCKS_PER_SEC;
+    seconds = (double)(end_t-start_t) / CLOCKS_PER_SEC;
     
     domain_size = N_X * N_Y * N_Z * T_MAX;
-    mlups = domain_size/total_t/1000000.0;
+    mlups = domain_size/seconds/1000000.0;
     
-    printf("\n\n   >> loop finished\n");
-    printf("\n   total runtime: %f seconds\n", total_t );
+    printf("\n   total runtime: %f seconds\n", seconds );
     printf("   domain size: %f\n", domain_size );
     printf("   MLUps: %f\n\n", mlups );
     
-    fprintf(fileout, "%f    %f    %f\n", domain_size, total_t, mlups);
+    fprintf(fileout, "%f    %f    %f\n", domain_size, seconds, mlups);
     fclose(fileout);
     
     return 0;

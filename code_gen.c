@@ -2,17 +2,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-int t_max = 2000;
-int n_x = 10;
-int n_y = 10;
-int n_z = 10;
-
+int t_max = 0;
+int n_x = 0;
+int n_y = 0;
+int n_z = 0;
 
 int main()
 {
     char line[100];
-    size_t len = 0;
-    ssize_t read = 0;
     int i = 0;
     
     // read source code
@@ -21,7 +18,7 @@ int main()
     
     if (filein == NULL)
     {
-        printf(">> cannot find source file lwacm.c");
+        printf(">> cannot find source file lwacm_raw");
         return 1;
     }
     
@@ -33,7 +30,7 @@ int main()
     fseek(filein, 0, SEEK_SET);
     
     char *buffer = malloc(pos);
-    fread(buffer, pos, 1, filein);
+    i = fread(buffer, pos, 1, filein);
     
     fclose(filein);
     
@@ -47,24 +44,19 @@ int main()
     // output files
     printf(">> start generating source code\n");
     
-    long domain = 0;
     char filename[100];
     
-    
-    for(i = 1; i < 100; i++)
+    for(i = 5; i < 100; i++)
     {
-        t_max = i*100;
+        t_max = 10000000/(i*i*i);
         
-        n_x = 10;
-        n_y = 10;
-        n_z = 10;
-        
-        // calculate domain
-        domain = t_max * n_x * n_y * n_z;
+        n_x = i;
+        n_y = i;
+        n_z = i;
         
         // make new filename
-        sprintf(filename, "lwacm_run_%ld.c", domain);
-        sprintf(runname, "./lwacm_run_%ld\n", domain);
+        sprintf(filename, "lwacm_run_%d_%d.c", n_x, t_max);
+        sprintf(runname, "./lwacm_run_%d_%d\n", n_x, t_max);
         
         // write to new file
         FILE *fileout;

@@ -4,6 +4,13 @@
 #include <time.h>
 #include <unistd.h>
 
+int xi_x[19] = { 0, 1,-1, 0, 0, 0, 0, 1,-1, 1,-1, 1,-1, 1,-1, 0, 0, 0, 0};
+int xi_y[19] = { 0, 0, 0, 1,-1, 0, 0, 1, 1,-1,-1, 0, 0, 0, 0, 1,-1, 1,-1};
+int xi_z[19] = { 0, 0, 0, 0, 0, 1,-1, 0, 0, 0, 0, 1, 1,-1,-1, 1, 1,-1,-1};
+
+double  w[19] = { 1/3.0, 1/18.0, 1/18.0, 1/18.0, 1/18.0, 1/18.0, 1/18.0, 
+          1/36.0,  1/36.0, 1/36.0, 1/36.0, 1/36.0, 1/36.0, 1/36.0, 1/36.0, 1/36.0, 1/36.0, 1/36.0, 1/36.0 };
+
 //collision frequency
 const double omega = 1.5;
 
@@ -22,8 +29,11 @@ int t_now = 0;
 int t_next = 0;
 
 //time parameter
+time_t begin, end;
 clock_t start_t, end_t;
-double total_t;
+double seconds;
+
+//performance parameter
 double domain_size;
 double mlups;
 
@@ -53,6 +63,29 @@ double f_x_t = 0;   // f(e, o)(x, t)
 double p_load = 0;
 double u_load[3] = {0, 0, 0};
 
+// this is a debug function
+void sum_up_p()
+{
+    printf("\n>> step = %d ", t);
+    
+    // part to sum up rho globally
+    double result = 0;
+      
+    for( x = 1; x < N_X+1; x++)
+    {
+        for( y = 1; y < N_Y+1; y++)
+        {
+            for( z = 1; z < N_Z+1; z++)
+            {
+                // calculate sum of p[]
+                result += p[t_next][x][y][z];
+            }
+        }
+    }
+    
+    printf("   sum of all rho[x][y][z] = %e ", result );
+}
+
 void progress_bar()
 {   
     int j = 0;
@@ -72,6 +105,52 @@ void progress_bar()
     printf("\r");
     
     fflush(stdout);
+}
+
+void alpha_call(int a)
+{
+  int xx,yy,zz;
+  //bool flag = false;
+  
+  xx=x-xi_x[a];
+  yy=y-xi_y[a];
+  zz=z-xi_z[a];
+  
+  /*
+  if ( xx == 0 ) { xx=N_X; flag = true; }
+  if ( yy == 0 ) { yy=N_Y; flag = true; }
+  if ( zz == 0 ) { zz=N_Z; flag = true; }
+
+  if ( xx == N_X+1 ) { xx=1; flag = true; }
+  if ( yy == N_Y+1 ) { yy=1; flag = true; }
+  if ( zz == N_Z+1 ) { zz=1; flag = true; }
+  
+  if(flag) { printf("\n>> access bc coord,  ( %d, %d, %d) <- (%d, %d, %d)", x-xi_x[a], y-xi_y[a], z-xi_z[a], xx, yy, zz ); }
+  
+  */
+
+  p_load = p[t_now][xx][yy][zz];
+  u_load[0] = u[t_now][xx][yy][zz][0];
+  u_load[1] = u[t_now][xx][yy][zz][1];
+  u_load[2] = u[t_now][xx][yy][zz][2];
+
+      
+  u_xi = u_load[0]*xi_x[a] + u_load[1]*xi_y[a] + u_load[2]*xi_z[a];
+  u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+  u_x_xi = u[t_now][x][y][z][0] *xi_x[a] + u[t_now][x][y][z][1]*xi_y[a] + u[t_now][x][y][z][2]*xi_z[a];
+      
+  // step 5, compute f(e)(x-xi[0], t)
+  f_e = w[a] * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+   
+  // step 6, compute f(e, o)(x-xi[0], t)
+  f_e_o = 3.0 * w[a] * p_load * u_xi;  // Eq.10
+      
+  // step 8.5, compute f(e, o)(x, t)
+  f_x_t = 3.0 * w[a] * p[t_now][x][y][z] * u_x_xi;
+  
+  // step 9, compute f(x, t+1)
+  f[a] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
+    
 }
 
 // call back functions to calculate f for each alpha from 0 to 18
@@ -617,9 +696,7 @@ int main( int argc, char *argv[] )
     
     printf("\n>> program start\n");
     printf("\n   domain size : N_X = %d, N_Y = %d, N_Z = %d\n", N_X, N_Y, N_Z );
-    printf("\n   timestep required : T_MAX = %d\n\n", T_MAX );
-    
-    start_t = clock();
+    printf("\n   timestep required : T_MAX = %d\n", T_MAX );
     
     // initialize p and u
     for( x = 0; x < N_X+2; x++)
@@ -646,6 +723,10 @@ int main( int argc, char *argv[] )
     t_now = 0;
     t_next = 1;
     
+    // record the start time
+    //time(&begin);
+    start_t = clock();
+    
     // for all time step t
     for( t = 0; t < T_MAX; t++)
     {
@@ -657,6 +738,12 @@ int main( int argc, char *argv[] )
             for( z = 1; z < N_Z+1; z++)
             {
                 // for all alpha from 0 to 18, calculate f[] for each node
+                /* test function for alpha
+                for( a = 0; a < 19; a++)
+                {
+                    alpha_call(a);
+                }
+                */
                 
                 alpha_0_call();
                 alpha_1_call();
@@ -838,21 +925,23 @@ int main( int argc, char *argv[] )
         // toggle t_now and t_next
         t_now  = 1-t_now;
         t_next = 1-t_next;
-        
     }
     
+    // record the end time
+    //time(&end);
+    //seconds = difftime(end, begin);
+    
     end_t = clock();
-    total_t = (double)(end_t-start_t) / CLOCKS_PER_SEC;
+    seconds = (double)(end_t-start_t) / CLOCKS_PER_SEC;
     
     domain_size = N_X * N_Y * N_Z * T_MAX;
-    mlups = domain_size/total_t/1000000.0;
+    mlups = domain_size/seconds/1000000.0;
     
-    printf("\n\n   >> loop finished\n");
-    printf("\n   total runtime: %f seconds\n", total_t );
+    printf("\n   total runtime: %f seconds\n", seconds );
     printf("   domain size: %f\n", domain_size );
     printf("   MLUps: %f\n\n", mlups );
     
-    fprintf(fileout, "%f    %f    %f\n", domain_size, total_t, mlups);
+    fprintf(fileout, "%f    %f    %f\n", domain_size, seconds, mlups);
     fclose(fileout);
     
     return 0;
