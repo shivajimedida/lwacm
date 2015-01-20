@@ -33,7 +33,6 @@
 #include <time.h>
 #include <unistd.h>
 
-
 int xi_x[19] = { 0, 1,-1, 0, 0, 0, 0, 1,-1, 1,-1, 1,-1, 1,-1, 0, 0, 0, 0};
 int xi_y[19] = { 0, 0, 0, 1,-1, 0, 0, 1, 1,-1,-1, 0, 0, 0, 0, 1,-1, 1,-1};
 int xi_z[19] = { 0, 0, 0, 0, 0, 1,-1, 0, 0, 0, 0, 1, 1,-1,-1, 1, 1,-1,-1};
@@ -975,7 +974,7 @@ int main( int argc, char *argv[] )
     printf("   MLUps(CPU): %f\n", mlups_cpu );
     printf("   MLUps(Real): %f\n\n", mlups_real );
     
-    fprintf(fileout, "%f    %f    %f    %f    %f    %f\n", domain, domain_size, sec_real, sec_cpu, mlups_cpu, mlups_real);
+    fprintf(fileout, "%f    %f    %f    %f    %f\n", domain, sec_real, sec_cpu, mlups_cpu, mlups_real);
     fclose(fileout);
     
     return 0;
