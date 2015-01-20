@@ -30,14 +30,20 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
 
 // define domain size and time steps
-#define T_MAX     10
-#define N_X       100
-#define N_Y       100
-#define N_Z       100
+ 
+#define N_X_MAX     320
+#define N_Y_MAX     320
+#define N_Z_MAX     320
+
+int T_MAX =  10;
+int N_X   =  10;
+int N_Y   =  10;
+int N_Z   =  10;
 
 int xi_x[19] = { 0, 1,-1, 0, 0, 0, 0, 1,-1, 1,-1, 1,-1, 1,-1, 0, 0, 0, 0};
 int xi_y[19] = { 0, 0, 0, 1,-1, 0, 0, 1, 1,-1,-1, 0, 0, 0, 0, 1,-1, 1,-1};
@@ -76,11 +82,11 @@ double mlups_cpu, mlups_real;
 // use x+2, y+2, z+2 to avoid illegal access like p(x-xi_alpha), same for u[]
 // 
 //       t |  x  |  y   |  z
-double p[2][N_X+2][N_Y+2][N_Z+2];
+double p[2][N_X_MAX+2][N_Y_MAX+2][N_Z_MAX+2];
 
 // array to store value u
 //       t |  x  |  y   |  z    |u_xyz, t=0 is t, t=1 is t+1
-double u[2][N_X+2][N_Y+2][N_Z+2][3];
+double u[2][N_X_MAX+2][N_Y_MAX+2][N_Z_MAX+2][3];
 
 // array to store f
 double f[19]     = { 0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0 };
@@ -722,9 +728,51 @@ void alpha_18_call()
       f[18] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
 }
 
+void useage()
+{
+    printf("\n>> lwacm, a tool to benchmark system for lb kernel\n");
+    printf("   usage: lwacm <flag> <parameter>\n");
+    printf("          flag: s <parameter:int>, specify the domain size\n");
+    printf("          flag: t <parameter:int>, specify the max time step\n");
+    printf("\n          e.g ./lwacm s 100 t 20\n\n");
+}
+
 
 int main( int argc, char *argv[] )
 {
+    // argument parsing
+    if(argc < 5)
+    {
+        printf(">> parameter not specified, please check");
+        useage();
+        return 1;
+    }
+    
+    else
+    {
+        for (i = 1; i < argc; ++i)
+        {
+            if(  *argv[i] == 'h'  )
+            {
+                useage();
+                return 0;
+            }
+            
+            if(  *argv[i] == 's'  )
+            {
+				N_X = atoi(argv[i + 1]);
+				N_Y = N_X;
+				N_Z = N_X;
+            }
+                
+            if(  *argv[i] == 't'  )
+            {
+                T_MAX = atoi(argv[i + 1]);
+            }
+        }
+    }
+    
+    
     
     FILE *fileout;
     fileout = fopen("log", "a+");
