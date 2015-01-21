@@ -25,8 +25,12 @@ ________________________________________________________________________________
    3, code_gen.c : the code generator that will add the domain size to 'lwacm_raw', and generate
       a new source file named 'lwacm_run_[domain_size].c' ([domain_size] is a integer).
       After that, a 'run.sh' will be generated to run all excutables one by one.
+      
+   4, run_compile_bound.sh : this script will add domain size at compile time then run the benchmark
+   
+   5, run_fix_bound.sh : this script pss domain size to lwacm then run the benchmark
 
->> run guide:
+>> run guide(old):
 
         [command]          [description]
         
@@ -47,6 +51,10 @@ ________________________________________________________________________________
 ________________________________________________________________________________________________
 
 change log:
+
+v0.5
+1, add another two script to dynamically change the domain size, and run the benchark program
+2, add the ability to change the domain bounds at runtime in lwacm.c
 
 v0.4
 1, add the code generator to generate the source code for different domain size
