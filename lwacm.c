@@ -137,9 +137,9 @@ void progress_bar()
     
     i = t*100/T_MAX;
     
-    if(i < 10) { printf("   [00%d] ", i); }    
-    else if(i < 100){ printf("   [0%d] ", i); }
-    else { printf("   [%d] ", i); }
+    if(i < 10) { printf("   [00%d %%] ", i); }    
+    else if(i < 100){ printf("   [0%d %%] ", i); }
+    else { printf("   [%d %%] ", i); }
         
     for(j = 0; j < i; ++j)
     {
@@ -1063,7 +1063,7 @@ int main( int argc, char *argv[] )
           }
         }
         
-        progress_bar();
+        //progress_bar();
         //sum_up_p();
         
         //#########################################################################################################################

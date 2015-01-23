@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for i in {5..400..1}
+for i in {5..300..1}
 do
    t_max=$((100000000/($i*$i*$i)))
    echo "N_X = $i, T_MAX = $t_max"
