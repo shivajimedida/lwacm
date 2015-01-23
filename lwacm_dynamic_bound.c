@@ -34,23 +34,13 @@
 #include <time.h>
 #include <unistd.h>
 
-// define domain size and time steps
- 
-#define N_X_MAX     400
-#define N_Y_MAX     400
-#define N_Z_MAX     400
+// initilize domain size and time steps
 
-int T_MAX =  10;
-int N_X   =  10;
-int N_Y   =  10;
-int N_Z   =  10;
+int T_MAX = 0;
+int N_X = 0;
+int N_Y = 0;
+int N_Z = 0;
 
-int xi_x[19] = { 0, 1,-1, 0, 0, 0, 0, 1,-1, 1,-1, 1,-1, 1,-1, 0, 0, 0, 0};
-int xi_y[19] = { 0, 0, 0, 1,-1, 0, 0, 1, 1,-1,-1, 0, 0, 0, 0, 1,-1, 1,-1};
-int xi_z[19] = { 0, 0, 0, 0, 0, 1,-1, 0, 0, 0, 0, 1, 1,-1,-1, 1, 1,-1,-1};
-
-double  w[19] = { 1/3.0, 1/18.0, 1/18.0, 1/18.0, 1/18.0, 1/18.0, 1/18.0, 
-          1/36.0,  1/36.0, 1/36.0, 1/36.0, 1/36.0, 1/36.0, 1/36.0, 1/36.0, 1/36.0, 1/36.0, 1/36.0, 1/36.0 };
 
 //collision frequency
 const double omega = 1.5;
@@ -62,8 +52,9 @@ int x = 0;
 int y = 0;
 int z = 0;
 
-int a = 0;
 int i = 0;
+
+long long bytes;
 
 // toggle flag
 int t_now = 0;
@@ -78,18 +69,31 @@ double sec_real, sec_cpu;
 double domain, domain_size;
 double mlups_cpu, mlups_real;
 
+
+
 // array to store value of p, t=0 is t, t=1 is t+1
 // use x+2, y+2, z+2 to avoid illegal access like p(x-xi_alpha), same for u[]
 // 
-//       t |  x  |  y   |  z
-double p[2][N_X_MAX+2][N_Y_MAX+2][N_Z_MAX+2];
+// array format
+//          t |  x  |  y   |  z
+// double p[2][N_X+2][N_Y+2][N_Z+2];
+
+// 4 dimensional array pointer for dynamic memory allocation
+double ****p;
+
 
 // array to store value u
-//       t |  x  |  y   |  z    |u_xyz, t=0 is t, t=1 is t+1
-double u[2][N_X_MAX+2][N_Y_MAX+2][N_Z_MAX+2][3];
+//         t |  x  |  y   |  z    |u_xyz, t=0 is t, t=1 is t+1
+// double u[2][N_X+2][N_Y+2][N_Z+2][3];
+
+// 5 dimensional array pointer for dynamic memory allocation
+double *****u;
+
+
 
 // array to store f
 double f[19]     = { 0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0 };
+
 
 // intermediate variables for calculating f[]
 double u_xi = 0;    // u(x-xi) * xi
@@ -100,9 +104,11 @@ double f_e = 0;     // f(e)
 double f_e_o = 0;   // f(e, o)(x-xi_alpha, t)
 double f_x_t = 0;   // f(e, o)(x, t)
 
+
 // for load p and u in alpha callback function
 double p_load = 0;
 double u_load[3] = {0, 0, 0};
+
 
 // this is a debug function
 void sum_up_p()
@@ -148,51 +154,6 @@ void progress_bar()
     fflush(stdout);
 }
 
-void alpha_call(int a)
-{
-  int xx,yy,zz;
-  //bool flag = false;
-  
-  xx=x-xi_x[a];
-  yy=y-xi_y[a];
-  zz=z-xi_z[a];
-  
-  /*
-  if ( xx == 0 ) { xx=N_X; flag = true; }
-  if ( yy == 0 ) { yy=N_Y; flag = true; }
-  if ( zz == 0 ) { zz=N_Z; flag = true; }
-
-  if ( xx == N_X+1 ) { xx=1; flag = true; }
-  if ( yy == N_Y+1 ) { yy=1; flag = true; }
-  if ( zz == N_Z+1 ) { zz=1; flag = true; }
-  
-  if(flag) { printf("\n>> access bc coord,  ( %d, %d, %d) <- (%d, %d, %d)", x-xi_x[a], y-xi_y[a], z-xi_z[a], xx, yy, zz ); }
-  
-  */
-
-  p_load = p[t_now][xx][yy][zz];
-  u_load[0] = u[t_now][xx][yy][zz][0];
-  u_load[1] = u[t_now][xx][yy][zz][1];
-  u_load[2] = u[t_now][xx][yy][zz][2];
-
-      
-  u_xi = u_load[0]*xi_x[a] + u_load[1]*xi_y[a] + u_load[2]*xi_z[a];
-  u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-  u_x_xi = u[t_now][x][y][z][0] *xi_x[a] + u[t_now][x][y][z][1]*xi_y[a] + u[t_now][x][y][z][2]*xi_z[a];
-      
-  // step 5, compute f(e)(x-xi[0], t)
-  f_e = w[a] * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
-   
-  // step 6, compute f(e, o)(x-xi[0], t)
-  f_e_o = 3.0 * w[a] * p_load * u_xi;  // Eq.10
-      
-  // step 8.5, compute f(e, o)(x, t)
-  f_x_t = 3.0 * w[a] * p[t_now][x][y][z] * u_x_xi;
-  
-  // step 9, compute f(x, t+1)
-  f[a] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
-    
-}
 
 // call back functions to calculate f for each alpha from 0 to 18
 void alpha_0_call()
@@ -728,9 +689,98 @@ void alpha_18_call()
       f[18] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
 }
 
+void free_array_p()
+{
+    // free mem for z
+    for(i = 0; i < 2; i++)
+    {
+        for(x = 0; x < N_X+2; x++)
+        {
+            for(y = 0; y < N_Y+2; y++)
+            {
+                free( p[i][x][y] );
+            }  
+        }
+    }
+    
+    // free mem for y
+    for(i = 0; i < 2; i++)
+    {
+        for(x = 0; x < N_X+2; x++)
+        {
+            free( p[i][x] );
+        }
+    }
+    
+    // free mem for x
+    for(i = 0; i < 2; i++)
+    {
+        free( p[i] );
+    }
+    
+    // free data pointer
+    free(p);
+    
+    printf("\n>> array p freed\n");
+    
+}
+
+void free_array_u()
+{
+    // free mem for u_xyz
+    for(i = 0; i < 2; i++)
+    {
+        for(x = 0; x < N_X+2; x++)
+        {
+            for(y = 0; y < N_Y+2; y++)
+            {
+                for(z = 0; z < N_Z+2; z++)
+                {
+                    free( u[i][x][y][z] );
+                }
+            }
+        }
+    }
+    
+    // free mem for z
+    for(i = 0; i < 2; i++)
+    {
+        for(x = 0; x < N_X+2; x++)
+        {
+            for(y = 0; y < N_Y+2; y++)
+            {
+                free( u[i][x][y] );
+            }  
+        }
+    }
+    
+    // free mem for y
+    for(i = 0; i < 2; i++)
+    {
+        for(x = 0; x < N_X+2; x++)
+        {
+            free( u[i][x] );
+        }
+    }
+    
+    // free mem for x
+    for(i = 0; i < 2; i++)
+    {
+        free( u[i] );
+    }
+    
+    // free data pointer
+    free(u);
+    
+    printf("\n>> array u freed\n");
+    
+}
+
+
+
 void useage()
 {
-    printf("\n>> lwacm, a tool to benchmark system for lb kernel\n");
+    printf("\n>> lwacm, a benchmark tool for LBM kernel\n");
     printf("   usage: lwacm <flag> <parameter>\n");
     printf("          flag: s <parameter:int>, specify the domain size\n");
     printf("          flag: t <parameter:int>, specify the max time step\n");
@@ -740,10 +790,12 @@ void useage()
 
 int main( int argc, char *argv[] )
 {
+    FILE *fileout;
+    fileout = fopen("log", "a+");
+    
     // argument parsing
-    if(argc < 5)
-    {
-        printf(">> parameter not specified, please check");
+    if(argc < 5) {
+        printf("\n>> parameter not specified, please check\n");
         useage();
         return 1;
     }
@@ -760,9 +812,9 @@ int main( int argc, char *argv[] )
             
             if(  *argv[i] == 's'  )
             {
-				N_X = atoi(argv[i + 1]);
-				N_Y = N_X;
-				N_Z = N_X;
+                N_X = atoi(argv[i + 1]);
+                N_Y = N_X;
+                N_Z = N_X;
             }
                 
             if(  *argv[i] == 't'  )
@@ -772,14 +824,164 @@ int main( int argc, char *argv[] )
         }
     }
     
+    if(N_X == 0 || N_Y == 0 || N_Z == 0) {
+        printf("\n>> domain size cannot be set to 0, please check\n");
+        useage();
+        return 1;
+    }
     
-    
-    FILE *fileout;
-    fileout = fopen("log", "a+");
     
     printf("\n>> program start\n");
     printf("\n   domain size : N_X = %d, N_Y = %d, N_Z = %d\n", N_X, N_Y, N_Z );
     printf("\n   timestep required : T_MAX = %d\n", T_MAX );
+    
+    // calculate memory consumption for p
+    bytes = 2 * (N_X+2) * (N_Y+2) * (N_Z+2) * sizeof(double);
+    
+    if( bytes > 1024*1024 ) {
+        printf("\n>> need to allocate %lld MBytes memory for array p\n", bytes/1024/1024);
+    }
+    
+    else if( bytes > 1024 ) {
+        printf("\n>> need to allocate  %lld KBytes memory for array p\n", bytes/1024);
+    }
+    
+    else {
+        printf("\n>> need to allocate  %lld Bytes memory for array p\n", bytes);
+    }
+    
+    
+    // calculate memory consumption for p
+    bytes = bytes * 3;
+    
+    if( bytes > 1024*1024 ) {
+        printf("\n>> need to allocate %lld MBytes memory for array u\n", bytes/1024/1024);
+    }
+    
+    else if( bytes > 1024 ) {
+        printf("\n>> need to allocate  %lld KBytes memory for array u\n", bytes/1024);
+    }
+    
+    else {
+        printf("\n>> need to allocate  %lld Bytes memory for array u\n", bytes);
+    }
+    
+    
+    printf("\n>> start allocating memory for array p\n");
+    
+    // allocate mem for array pointer
+    p = malloc( 2 * sizeof(double ***) );
+    
+    if(p == NULL)
+    {
+        fprintf(stderr, "\n   error allocating memory for array pointer (size = 2)\n\n");
+        return 1;
+    }
+    
+    // allocate mem for t_now and t_next
+    for(i = 0; i < 2; i++)
+    {
+        p[i] = malloc( (N_X+2) * sizeof(double**) );
+        
+        if(p[i] == NULL)
+        {
+            fprintf(stderr, "\n   error allocating memory for t_now/t_next (size = %d)\n\n", N_X);
+            return 1;
+        }
+        //else { printf("\n   mem [%d] ok\n", i); }
+        
+        // allocate mem for N_X
+        for(x = 0; x < N_X+2; x++)
+        {
+            p[i][x] = malloc( (N_Y+2) * sizeof(double*) );
+        
+            if(p[i][x] == NULL)
+            {
+                fprintf(stderr, "\n   error allocating memory for N_X (size = %d)\n\n", N_Y);
+                return 1;
+            }
+            //else { printf("\n   mem [%d][%d] ok\n", i, x); }
+            
+            // allocate mem for N_X(actuall data)
+            for(y = 0; y < N_Y+2; y++)
+            {
+                p[i][x][y] = malloc( (N_Z+2) * sizeof(double) );
+        
+                if(p[i][x][y] == NULL)
+                {
+                    fprintf(stderr, "\n   error allocating memory for N_Y (size =%d)\n\n", N_Z);
+                    return 1;
+                }
+                //else { printf("\n   mem [%d][%d][%d] ok\n", i, x, y); }
+            }
+        }
+    }
+    
+    
+    printf("\n>> start allocating memory for array u\n");
+    
+    // allocate mem for array pointer
+    u = malloc( 2 * sizeof(double ****) );
+    
+    if(p == NULL)
+    {
+        fprintf(stderr, "\n   error allocating memory for array pointer(size = 2)\n\n");
+        return 1;
+    }
+    
+    // allocate mem for t_now and t_next
+    for(i = 0; i < 2; i++)
+    {
+        u[i] = malloc( (N_X+2) * sizeof(double***) );
+        
+        if(u[i] == NULL)
+        {
+            fprintf(stderr, "\n   error allocating memory for t_now/t_next(size = %d)\n\n", N_X);
+            return 1;
+        }
+        //else { printf("\n   mem [%d] ok\n", i); }
+        
+        // allocate mem for N_X
+        for(x = 0; x < N_X+2; x++)
+        {
+            u[i][x] = malloc( (N_Y+2) * sizeof(double**) );
+        
+            if(u[i][x] == NULL)
+            {
+                fprintf(stderr, "\n   error allocating memory for N_X(size = %d)\n\n", N_Y);
+                return 1;
+            }
+            //else { printf("\n   mem [%d][%d] ok\n", i, x); }
+            
+            // allocate mem for N_X
+            for(y = 0; y < N_Y+2; y++)
+            {
+                u[i][x][y] = malloc( (N_Z+2) * sizeof(double*) );
+        
+                if(u[i][x][y] == NULL)
+                {
+                    fprintf(stderr, "\n   error allocating memory for N_Y(size =%d)\n\n", N_Z);
+                    return 1;
+                }
+                //else { printf("\n   mem [%d][%d][%d] ok\n", i, x, y); }
+                
+                // allocate mem for N_Z
+                for(z = 0; z < N_Z+2; z++)
+                {
+                    u[i][x][y][z] = malloc( 3 * sizeof(double) );
+        
+                    if(u[i][x][y][z] == NULL)
+                    {
+                        fprintf(stderr, "\n   error allocating memory for N_Z(size = 3)\n\n");
+                        return 1;
+                    }
+                }
+            }
+        }
+    }
+
+    
+    printf("\n>> initializing array p and u\n");
     
     // initialize p and u
     for( x = 0; x < N_X+2; x++)
@@ -860,7 +1062,8 @@ int main( int argc, char *argv[] )
           }
         }
         
-        //progress_bar();
+        progress_bar();
+        //sum_up_p();
         
         //#########################################################################################################################
         //##################################################### start #############################################################
@@ -1009,6 +1212,10 @@ int main( int argc, char *argv[] )
         t_now  = 1-t_now;
         t_next = 1-t_next;
     }
+    
+    // free dynamically allocated array p and u
+    free_array_p();
+    free_array_u();
     
     // record the end time
     time(&end);
