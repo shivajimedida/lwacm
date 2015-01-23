@@ -135,7 +135,7 @@ void progress_bar()
 {   
     int j = 0;
     
-    i = t*100/(T_MAX-1);
+    i = t*100/T_MAX;
     
     if(i < 10) { printf("   [00%d] ", i); }    
     else if(i < 100){ printf("   [0%d] ", i); }
@@ -822,8 +822,8 @@ int main( int argc, char *argv[] )
         }
     }
     
-    if(N_X == 0 || N_Y == 0 || N_Z == 0) {
-        printf("\n>> domain size cannot be set to 0, please check\n");
+    if(N_X == 0 || N_Y == 0 || N_Z == 0 || T_MAX == 0) {
+        printf("\n>> domain size or T_MAX cannot be set to 0, please check\n");
         useage();
         return 1;
     }
