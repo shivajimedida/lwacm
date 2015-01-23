@@ -10,6 +10,6 @@ BIN := $(SRC:.c=)
 default: $(BIN)
 
 clean:
-	rm -rf $(BIN) *.c~ makefile~ README~
+	rm -rf $(BIN)
 	
 	

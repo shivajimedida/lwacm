@@ -124,6 +124,8 @@ Old questioins:
 9, add time measurement before and after the iteration loop and print the number of lattice site
    updates per second, i.e. (N_X*N_Y*N_Z*T_MAX) / Delta_t. A nice graph also would be
    performance as function of the domain size.
+   
+   time to setup the simulation and to finalize it does not count, only the iteration loop.
 
 
 __________________________________

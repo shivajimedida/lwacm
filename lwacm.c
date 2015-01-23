@@ -64,7 +64,7 @@ clock_t start_t, end_t;
 double sec_real, sec_cpu;
 
 //performance parameter
-double domain, domain_size;
+double nodes, domain_size;
 double mlups_cpu, mlups_real;
 
 
@@ -157,10 +157,10 @@ void progress_bar()
 void alpha_0_call()
 {      
       // alpha = 0 calculate u * xi and u square  xi(0)  {  0,  0,  0, }
-            
+      
       //load p(x-xia) and u(x-xia)
       p_load = p[t_now][x][y][z];
-             
+      
       u_load[0] = u[t_now][x][y][z][0];
       u_load[1] = u[t_now][x][y][z][1];
       u_load[2] = u[t_now][x][y][z][2];
@@ -837,15 +837,15 @@ int main( int argc, char *argv[] )
     bytes = 2 * (N_X+2) * (N_Y+2) * (N_Z+2) * sizeof(double);
     
     if( bytes > 1024*1024 ) {
-        printf("\n>> need to allocate %lld MBytes memory for array p\n", bytes/1024/1024);
+        printf("\n   > need to allocate %lld MBytes memory for array p\n", bytes/1024/1024);
     }
     
     else if( bytes > 1024 ) {
-        printf("\n>> need to allocate  %lld KBytes memory for array p\n", bytes/1024);
+        printf("\n   > need to allocate  %lld KBytes memory for array p\n", bytes/1024);
     }
     
     else {
-        printf("\n>> need to allocate  %lld Bytes memory for array p\n", bytes);
+        printf("\n   > need to allocate  %lld Bytes memory for array p\n", bytes);
     }
     
     
@@ -853,24 +853,18 @@ int main( int argc, char *argv[] )
     bytes = bytes * 3;
     
     if( bytes > 1024*1024 ) {
-        printf("\n>> need to allocate %lld MBytes memory for array u\n", bytes/1024/1024);
+        printf("\n   > need to allocate %lld MBytes memory for array u\n", bytes/1024/1024);
     }
     
     else if( bytes > 1024 ) {
-        printf("\n>> need to allocate  %lld KBytes memory for array u\n", bytes/1024);
+        printf("\n   > need to allocate  %lld KBytes memory for array u\n", bytes/1024);
     }
     
     else {
-        printf("\n>> need to allocate  %lld Bytes memory for array u\n", bytes);
+        printf("\n   > need to allocate  %lld Bytes memory for array u\n", bytes);
     }
     
-    
-    // record the start time
-    time(&begin);
-    start_t = clock();
-    
-    
-    printf("\n>> start allocating memory for array p\n");
+    printf("\n   > start allocating memory for array p\n");
     
     // allocate mem for array pointer
     p = malloc( 2 * sizeof(double ***) );
@@ -920,8 +914,8 @@ int main( int argc, char *argv[] )
         }
     }
     
-    printf("\n   done\n");
-    printf("\n>> start allocating memory for array u\n");
+    printf("\n     done\n");
+    printf("\n   > start allocating memory for array u\n");
     
     // allocate mem for array pointer
     u = malloc( 2 * sizeof(double ****) );
@@ -983,8 +977,8 @@ int main( int argc, char *argv[] )
         }
     }
 
-    printf("\n   done\n");
-    printf("\n>> initializing array p and u\n");
+    printf("\n     done\n");
+    printf("\n   > initializing array p and u\n");
     
     // initialize p and u
     for( x = 0; x < N_X+2; x++)
@@ -1012,6 +1006,10 @@ int main( int argc, char *argv[] )
     t_next = 1;
     
     printf("\n   done\n");
+    
+    // record the start time
+    time(&begin);
+    start_t = clock();
     
     // for all time step t
     for( t = 0; t < T_MAX; t++)
@@ -1225,7 +1223,7 @@ int main( int argc, char *argv[] )
     free_array_p();
     free_array_u();
     
-    domain = N_X * N_Y * N_Z;
+    nodes = N_X * N_Y * N_Z;
     domain_size = N_X * N_Y * N_Z * T_MAX;
     mlups_real = domain_size/sec_real/1000000.0;
     mlups_cpu = domain_size/sec_cpu/1000000.0;
@@ -1236,7 +1234,7 @@ int main( int argc, char *argv[] )
     printf("   MLUps(CPU): %f\n", mlups_cpu );
     printf("   MLUps(Real): %f\n\n", mlups_real );
     
-    fprintf(fileout, "%f    %f    %f    %f    %f\n", domain, sec_real, sec_cpu, mlups_cpu, mlups_real);
+    fprintf(fileout, "%d    %f    %f    %f    %f    %f\n", N_X, nodes, sec_real, sec_cpu, mlups_cpu, mlups_real);
     fclose(fileout);
     
     return 0;
