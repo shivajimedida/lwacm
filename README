@@ -126,4 +126,28 @@ Old questioins:
    performance as function of the domain size.
 
 
+__________________________________
+
+server note:
+
+faui00x.informatik.uni-erlangen.de
+CPU: Intel(R) Core(TM) i7-2600
+MEM: 16 GB
+
+faui06x.informatik.uni-erlangen.de
+
+faui0sr0.informatik.uni-erlangen.de
+CPU: Intel(R) Xeon(R) CPU    E7340
+MEM: 32 GB
+
+faui0sr1.informatik.uni-erlangen.de
+
+faui01.informatik.uni-erlangen.de
+CPU: AMD Opteron(tm) Processor 250
+MEM: 8 GB
+
+
+
+
+
 

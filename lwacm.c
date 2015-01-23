@@ -922,7 +922,7 @@ int main( int argc, char *argv[] )
         }
     }
     
-    
+    printf("\n   done\n");
     printf("\n>> start allocating memory for array u\n");
     
     // allocate mem for array pointer
@@ -985,7 +985,7 @@ int main( int argc, char *argv[] )
         }
     }
 
-    
+    printf("\n   done\n");
     printf("\n>> initializing array p and u\n");
     
     // initialize p and u
@@ -1012,6 +1012,8 @@ int main( int argc, char *argv[] )
     // initialize toggle flag
     t_now = 0;
     t_next = 1;
+    
+    printf("\n   done\n");
     
     // for all time step t
     for( t = 0; t < T_MAX; t++)
