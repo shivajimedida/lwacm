@@ -36,9 +36,9 @@
 
 // define domain size and time steps
  
-#define N_X_MAX     320
-#define N_Y_MAX     320
-#define N_Z_MAX     320
+#define N_X_MAX     400
+#define N_Y_MAX     400
+#define N_Z_MAX     400
 
 int T_MAX =  10;
 int N_X   =  10;
