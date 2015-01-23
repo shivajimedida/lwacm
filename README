@@ -52,6 +52,9 @@ ________________________________________________________________________________
 
 change log:
 
+v0.6
+1, use dynamic memory allocation for the array instead of fixed 
+
 v0.5
 1, add another two script to dynamically change the domain size, and run the benchark program
 2, add the ability to change the domain bounds at runtime in lwacm.c

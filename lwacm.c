@@ -867,6 +867,11 @@ int main( int argc, char *argv[] )
     }
     
     
+    // record the start time
+    time(&begin);
+    start_t = clock();
+    
+    
     printf("\n>> start allocating memory for array p\n");
     
     // allocate mem for array pointer
@@ -1007,10 +1012,6 @@ int main( int argc, char *argv[] )
     // initialize toggle flag
     t_now = 0;
     t_next = 1;
-    
-    // record the start time
-    time(&begin);
-    start_t = clock();
     
     // for all time step t
     for( t = 0; t < T_MAX; t++)
@@ -1213,16 +1214,16 @@ int main( int argc, char *argv[] )
         t_next = 1-t_next;
     }
     
-    // free dynamically allocated array p and u
-    free_array_p();
-    free_array_u();
-    
     // record the end time
     time(&end);
     sec_real = difftime(end, begin);
     
     end_t = clock();
     sec_cpu = (double)(end_t-start_t) / CLOCKS_PER_SEC;
+    
+    // free dynamically allocated array p and u
+    free_array_p();
+    free_array_u();
     
     domain = N_X * N_Y * N_Z;
     domain_size = N_X * N_Y * N_Z * T_MAX;
