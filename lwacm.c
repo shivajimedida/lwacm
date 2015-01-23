@@ -35,12 +35,10 @@
 #include <unistd.h>
 
 // initilize domain size and time steps
-
 int T_MAX = 0;
 int N_X = 0;
 int N_Y = 0;
 int N_Z = 0;
-
 
 //collision frequency
 const double omega = 1.5;
