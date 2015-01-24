@@ -12,7 +12,7 @@ data = load( filename );
 plot( data(:,1), data(:,5), '-', data(:,1), data(:,6), '-' );
 grid();
 
-title( ['Performance of LWACM using ' filename] );
+title( ['Performance of LWACM - ' filename] );
 
 xlabel( 'domain size' );
 ylabel( 'MLUPS' );

@@ -52,7 +52,7 @@ int z = 0;
 
 int i = 0;
 
-long long bytes;
+long long bytes = 0;
 
 // toggle flag
 int t_now = 0;
@@ -60,13 +60,17 @@ int t_next = 0;
 
 //time parameter
 time_t begin, end;
-clock_t start_t, end_t;
-double sec_real, sec_cpu;
+clock_t start_t = 0;
+clock_t end_t = 0;
+
+double sec_real = 0;
+double sec_cpu = 0;
 
 //performance parameter
-double nodes, domain_size;
-double mlups_cpu, mlups_real;
-
+double nodes = 0;
+double domain_size = 0;
+double mlups_cpu = 0;
+double mlups_real = 0;
 
 
 // array to store value of p, t=0 is t, t=1 is t+1
@@ -77,7 +81,7 @@ double mlups_cpu, mlups_real;
 // double p[2][N_X+2][N_Y+2][N_Z+2];
 
 // 4 dimensional array pointer for dynamic memory allocation
-double ****p;
+double ****p = NULL;
 
 
 // array to store value u
@@ -85,8 +89,7 @@ double ****p;
 // double u[2][N_X+2][N_Y+2][N_Z+2][3];
 
 // 5 dimensional array pointer for dynamic memory allocation
-double *****u;
-
+double *****u = NULL;
 
 
 // array to store f
@@ -106,7 +109,6 @@ double f_x_t = 0;   // f(e, o)(x, t)
 // for load p and u in alpha callback function
 double p_load = 0;
 double u_load[3] = {0, 0, 0};
-
 
 // this is a debug function
 void sum_up_p()
@@ -131,6 +133,7 @@ void sum_up_p()
     printf("   sum of all rho[x][y][z] = %e ", result );
 }
 
+// small function to show progress bar if you are tired of waiting
 void progress_bar()
 {   
     int j = 0;
@@ -151,7 +154,6 @@ void progress_bar()
     
     fflush(stdout);
 }
-
 
 // call back functions to calculate f for each alpha from 0 to 18
 void alpha_0_call()
@@ -689,6 +691,8 @@ void alpha_18_call()
 
 void free_array_p()
 {
+    fprintf(stderr, "\n   > free array p...    ");
+    
     // free mem for z
     for(i = 0; i < 2; i++)
     {
@@ -719,12 +723,14 @@ void free_array_p()
     // free data pointer
     free(p);
     
-    printf("\n>> array p freed\n");
+    fprintf(stderr, "done\n");
     
 }
 
 void free_array_u()
 {
+    fprintf(stderr, "\n   > free array u...    ");
+    
     // free mem for u_xyz
     for(i = 0; i < 2; i++)
     {
@@ -770,7 +776,7 @@ void free_array_u()
     // free data pointer
     free(u);
     
-    printf("\n>> array u freed\n");
+    fprintf(stderr, "done\n");
     
 }
 
@@ -778,22 +784,22 @@ void free_array_u()
 
 void useage()
 {
-    printf("\n>> lwacm, a benchmark tool for LBM kernel\n");
-    printf("   usage: lwacm <flag> <parameter>\n");
-    printf("          flag: s <parameter:int>, specify the domain size\n");
-    printf("          flag: t <parameter:int>, specify the max time step\n");
-    printf("\n          e.g ./lwacm s 100 t 20\n\n");
+    fprintf(stderr, "\n>> lwacm, a benchmark tool for LBM kernel\n");
+    fprintf(stderr, "   usage: lwacm <flag> <parameter>\n");
+    fprintf(stderr, "          flag: s <parameter:int>, specify the domain size\n");
+    fprintf(stderr, "          flag: t <parameter:int>, specify the max time step\n");
+    fprintf(stderr, "\n          e.g ./lwacm s 100 t 20\n\n");
 }
 
 
 int main( int argc, char *argv[] )
 {
-    FILE *fileout;
+    FILE *fileout = NULL;
     fileout = fopen("log", "a+");
     
     // argument parsing
     if(argc < 5) {
-        printf("\n>> parameter not specified, please check\n");
+        fprintf(stderr, "\n>> parameter not specified, please check\n");
         useage();
         return 1;
     }
@@ -823,29 +829,28 @@ int main( int argc, char *argv[] )
     }
     
     if(N_X == 0 || N_Y == 0 || N_Z == 0 || T_MAX == 0) {
-        printf("\n>> domain size or T_MAX cannot be set to 0, please check\n");
+        fprintf(stderr, "\n>> domain size or T_MAX cannot be set to 0, please check\n");
         useage();
         return 1;
     }
     
     
-    printf("\n>> program start\n");
-    printf("\n   domain size : N_X = %d, N_Y = %d, N_Z = %d\n", N_X, N_Y, N_Z );
-    printf("\n   timestep required : T_MAX = %d\n", T_MAX );
+    fprintf(stderr, "\n>> program start\n\n   domain size : N_X = %d, N_Y = %d, N_Z = %d\n", N_X, N_Y, N_Z );
+    fprintf(stderr, "\n   timestep required : T_MAX = %d\n", T_MAX );
     
     // calculate memory consumption for p
     bytes = 2 * (N_X+2) * (N_Y+2) * (N_Z+2) * sizeof(double);
     
     if( bytes > 1024*1024 ) {
-        printf("\n   > need to allocate %lld MBytes memory for array p\n", bytes/1024/1024);
+        fprintf(stderr, "\n   size of array p : %lld MBytes\n", bytes/1024/1024);
     }
     
     else if( bytes > 1024 ) {
-        printf("\n   > need to allocate  %lld KBytes memory for array p\n", bytes/1024);
+        fprintf(stderr, "\n   size of array p : %lld KBytes\n", bytes/1024);
     }
     
     else {
-        printf("\n   > need to allocate  %lld Bytes memory for array p\n", bytes);
+        fprintf(stderr, "\n   size of array p :  %lld Bytes\n", bytes);
     }
     
     
@@ -853,18 +858,18 @@ int main( int argc, char *argv[] )
     bytes = bytes * 3;
     
     if( bytes > 1024*1024 ) {
-        printf("\n   > need to allocate %lld MBytes memory for array u\n", bytes/1024/1024);
+        fprintf(stderr, "\n   size of array u : %lld MBytes\n", bytes/1024/1024);
     }
     
     else if( bytes > 1024 ) {
-        printf("\n   > need to allocate  %lld KBytes memory for array u\n", bytes/1024);
+        fprintf(stderr, "\n   size of array u : %lld KBytes\n", bytes/1024);
     }
     
     else {
-        printf("\n   > need to allocate  %lld Bytes memory for array u\n", bytes);
+        fprintf(stderr, "\n   size of array u : %lld Bytes\n", bytes);
     }
     
-    printf("\n   > start allocating memory for array p\n");
+    fprintf(stderr, "\n   > start allocating memory for array p...    ");
     
     // allocate mem for array pointer
     p = malloc( 2 * sizeof(double ***) );
@@ -914,8 +919,7 @@ int main( int argc, char *argv[] )
         }
     }
     
-    printf("\n     done\n");
-    printf("\n   > start allocating memory for array u\n");
+    fprintf(stderr, "done\n\n   > start allocating memory for array u...    ");
     
     // allocate mem for array pointer
     u = malloc( 2 * sizeof(double ****) );
@@ -977,8 +981,7 @@ int main( int argc, char *argv[] )
         }
     }
 
-    printf("\n     done\n");
-    printf("\n   > initializing array p and u\n");
+    fprintf(stderr, "done\n\n   > initializing array p and u...    ");
     
     // initialize p and u
     for( x = 0; x < N_X+2; x++)
@@ -1005,7 +1008,7 @@ int main( int argc, char *argv[] )
     t_now = 0;
     t_next = 1;
     
-    printf("\n     done\n");
+    fprintf(stderr, "done\n\n   > updating cell...    ");
     
     // record the start time
     time(&begin);
@@ -1022,12 +1025,11 @@ int main( int argc, char *argv[] )
             for( z = 1; z < N_Z+1; z++)
             {
                 // for all alpha from 0 to 18, calculate f[] for each node
-                /* test function for alpha
-                for( a = 0; a < 19; a++)
-                {
-                    alpha_call(a);
-                }
-                */
+                // test function for alpha
+                //for( a = 0; a < 19; a++)
+                //{
+                //    alpha_call(a);
+                //}
                 
                 alpha_0_call();
                 alpha_1_call();
@@ -1212,6 +1214,8 @@ int main( int argc, char *argv[] )
         t_next = 1-t_next;
     }
     
+    fprintf(stderr, "done\n");
+    
     // record the end time
     time(&end);
     sec_real = difftime(end, begin);
@@ -1228,11 +1232,11 @@ int main( int argc, char *argv[] )
     mlups_real = domain_size/sec_real/1000000.0;
     mlups_cpu = domain_size/sec_cpu/1000000.0;
     
-    printf("\n   real runtime: %f seconds\n", sec_real );
-    printf("   cpu  runtime: %f seconds\n", sec_cpu );
-    printf("   domain size: %f\n", domain_size );
-    printf("   MLUps(CPU): %f\n", mlups_cpu );
-    printf("   MLUps(Real): %f\n\n", mlups_real );
+    fprintf(stderr, "\n   Wall Clock:  %f seconds\n", sec_real );
+    fprintf(stderr, "   CPU Timer:   %f seconds\n", sec_cpu );
+    fprintf(stderr, "   domain size: %f\n", domain_size );
+    fprintf(stderr, "   MLUps(CPU):  %f\n", mlups_cpu );
+    fprintf(stderr, "   MLUps(Wall): %f\n\n", mlups_real );
     
     fprintf(fileout, "%d    %f    %f    %f    %f    %f\n", N_X, nodes, sec_real, sec_cpu, mlups_cpu, mlups_real);
     fclose(fileout);
