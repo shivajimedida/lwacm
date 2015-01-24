@@ -1,14 +1,18 @@
 % Octave can handle doulbe quotes "". In addition the load() command
 % is able to treat the header correctly (in contrast to MATLAB)
 
-cpu = 'arm1';
+% get the file from command line
+arg_list = argv();
+filename = arg_list{1};
 
-data = load( ['log_' cpu] );
+%disp ("file name is :"), disp (filename) ;
+
+data = load( filename );
 
 plot( data(:,1), data(:,5), '-', data(:,1), data(:,6), '-' );
 grid();
 
-title( ['MLUPS of ' cpu] );
+title( ['Performance of LWACM using ' filename] );
 
 xlabel( 'domain size' );
 ylabel( 'MLUPS' );
@@ -16,5 +20,5 @@ ylabel( 'MLUPS' );
 legend( 'MLUPS (CPU Timer)', 'MLUPS (Wall Clock)' );
 
 % Use the print() command to export a graph
-print( ['plot_' cpu '.png'] );
+print( ['plot_' filename '.png'] );
 
