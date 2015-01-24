@@ -1005,7 +1005,7 @@ int main( int argc, char *argv[] )
     t_now = 0;
     t_next = 1;
     
-    printf("\n   done\n");
+    printf("\n     done\n");
     
     // record the start time
     time(&begin);
