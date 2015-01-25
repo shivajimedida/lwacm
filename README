@@ -20,33 +20,19 @@ ________________________________________________________________________________
       
       e.g  '500000.000000    0.398274    1.255417'
       
-   2, lwacm_raw : soure code without domain definition
+   2, run.sh : this script will pass domain size to the program to run the benchmark
    
-   3, code_gen.c : the code generator that will add the domain size to 'lwacm_raw', and generate
-      a new source file named 'lwacm_run_[domain_size].c' ([domain_size] is a integer).
-      After that, a 'run.sh' will be generated to run all excutables one by one.
-      
-   4, run_compile_bound.sh : this script will add domain size at compile time then run the benchmark
-   
-   5, run_fix_bound.sh : this script pss domain size to lwacm then run the benchmark
+   3, draw.sh : this script will draw all the log files into separate plots
 
 >> run guide(old):
 
         [command]          [description]
         
    1,   make               compile code_gen
-   2,   ./code_gen         generate all source code for different domain size and run.sh
-   3,   make               compile all source codes
-   4,   chmod +x run.sh    make the script executable
    5,   ./run.sh           run all programs
    
    
    wait until all program terminates, and all performance data can be found in 'log'.
-   
-   Note: data in file 'log' are not ordered. to order it, we can use:
-   
-   6,   sort -n +0 -1 log > log2
-   7,   make clean         this will delete all generated files except 'log' 
    
 ________________________________________________________________________________________________
 
@@ -154,10 +140,10 @@ MEM: 4GB
 
 
 
+cshpc.rrze.fau.de
+emmy.rrze.fau.de
 
-1, faui00x.informatik.uni-erlangen.de
 
-2, lse87.e-technick.uni-erlangen.de
 
 
 
