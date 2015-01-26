@@ -1,11 +1,12 @@
-lwacm
+lWACM
 =====
 
 Link-wise Artificial Compressibility Method C implementation
 
 by Yifan Yang with supervisor Thomas Zeiser @ FAU   01.12.2014
 
-The source code is free, do whatever you want.
+
+The source is completely free, do whatever you want.
 
 ________________________________________________________________________________________________
 
@@ -15,24 +16,31 @@ ________________________________________________________________________________
 
 >> file description
    
-   1, lwacm.c : original source code, after the program teminates, the performance date will be 
-      written into file 'log', with the format as: [domain_size]  [run_time]  [MLUps]
+   1, lwacm.c : original source code, after the program finishes, the performance date will be 
+      written into file 'log', with the format as:
       
-      e.g  '500000.000000    0.398274    1.255417'
+      [nodes_per_dimension]  [domain_size]  [run_time_cpu]  [run_time_wall_clock]  [MLUps_cpu]  [MLUps_wall_clock]
       
-   2, run.sh : this script will pass domain size to the program to run the benchmark
+      e.g  '300  27000000.000000  39.000000  39.130000  4.830054  4.846154'
+      
+   2, run.sh : bash script that passes domain size and time step to the program to run the benchmark
    
-   3, draw.sh : this script will draw all the log files into separate plots
+   3, draw.sh : bash script that draws all the log files into separate plots
+   
+   4, draw.m : octave script that draws a log files with specific name into one plot
+   
+   5, draw_all.m: octave script that draws all log files into one plot
 
->> run guide(old):
+>> guide:
 
-        [command]          [description]
+        [command]            [description]
         
-   1,   make               compile code_gen
-   5,   ./run.sh           run all programs
+   1,   make                 compile lwacm
+   2,   ./lwacm s 100 t 10   run the lwacm with N_X = N_Y = N_Z = 100 and time step t = 10
+   3,   ./run.sh             run lwacm with specific range requests
    
    
-   wait until all program terminates, and all performance data can be found in 'log'.
+   wait until all program finishes, and all performance data will be written in file 'log'.
    
 ________________________________________________________________________________________________
 
@@ -142,17 +150,3 @@ MEM: 4GB
 
 cshpc.rrze.fau.de
 emmy.rrze.fau.de
-
-
-
-
-
-
-
-
-
-
-
-
-
-
