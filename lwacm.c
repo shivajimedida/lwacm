@@ -31,7 +31,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
+#include <sys/time.h>
 #include <unistd.h>
 
 // initilize domain size and time steps
@@ -59,18 +59,19 @@ int t_now = 0;
 int t_next = 0;
 
 //time parameter
-time_t begin, end;
-clock_t start_t = 0;
-clock_t end_t = 0;
+struct timeval tm_start, tm_end;
 
-double sec_real = 0;
-double sec_cpu = 0;
+
+//time_t begin, end;
+//clock_t start_t = 0;
+//clock_t end_t = 0;
+
+double sec_elapsed = 0;
 
 //performance parameter
-double nodes = 0;
 double domain_size = 0;
-double mlups_cpu = 0;
-double mlups_real = 0;
+double total_lattice_update = 0;
+double mlups = 0;
 
 
 // array to store value of p, t=0 is t, t=1 is t+1
@@ -328,7 +329,7 @@ void alpha_5_call()
 void alpha_6_call()
 {
       // alpha = 0 calculate u * xi and u square  xi(6)  {  0,  0, -1, }
-            
+      
       //load p(x-xia) and u(x-xia)
       p_load = p[t_now][x][y][z+1];
       
@@ -356,7 +357,7 @@ void alpha_6_call()
 void alpha_7_call()
 {
       // alpha = 0 calculate u * xi and u square  xi(7)  {  1,  1,  0, }
-            
+      
       //load p(x-xia) and u(x-xia)
       p_load = p[t_now][x-1][y-1][z];
       
@@ -384,7 +385,7 @@ void alpha_7_call()
 void alpha_8_call()
 {
       // alpha = 0 calculate u * xi and u square  xi(8)  { -1,  1,  0, }
-            
+      
       //load p(x-xia) and u(x-xia)
       p_load = p[t_now][x+1][y-1][z];
       
@@ -412,7 +413,7 @@ void alpha_8_call()
 void alpha_9_call()
 {
       // alpha = 0 calculate u * xi and u square  xi(9)  {  1, -1,  0, }
-            
+      
       //load p(x-xia) and u(x-xia)
       p_load = p[t_now][x-1][y+1][z];
       
@@ -440,7 +441,7 @@ void alpha_9_call()
 void alpha_10_call()
 {
       // alpha = 0 calculate u * xi and u square  xi(10) { -1, -1,  0, }
-            
+      
       //load p(x-xia) and u(x-xia)
       p_load = p[t_now][x+1][y+1][z];
       
@@ -468,7 +469,7 @@ void alpha_10_call()
 void alpha_11_call()
 {
       // alpha = 0 calculate u * xi and u square  xi(11) {  1,  0,  1, }
-            
+      
       //load p(x-xia) and u(x-xia)
       p_load = p[t_now][x-1][y][z-1];
       
@@ -496,7 +497,7 @@ void alpha_11_call()
 void alpha_12_call()
 {
       // alpha = 0 calculate u * xi and u square  xi(12) { -1,  0,  1, }
-            
+      
       //load p(x-xia) and u(x-xia)
       p_load = p[t_now][x+1][y][z-1];
       
@@ -524,7 +525,7 @@ void alpha_12_call()
 void alpha_13_call()
 {
       // alpha = 0 calculate u * xi and u square  xi(13) {  1,  0, -1, }
-            
+      
       //load p(x-xia) and u(x-xia)
       p_load = p[t_now][x-1][y][z+1];
       
@@ -580,7 +581,7 @@ void alpha_14_call()
 void alpha_15_call()
 {
       // alpha = 0 calculate u * xi and u square  xi(15) {  0,  1,  1, }
-            
+      
       //load p(x-xia) and u(x-xia)
       p_load = p[t_now][x][y-1][z-1];
       
@@ -636,7 +637,7 @@ void alpha_16_call()
 void alpha_17_call()
 {
       // alpha = 0 calculate u * xi and u square  xi(17) {  0,  1, -1, }
-            
+      
       //load p(x-xia) and u(x-xia)
       p_load = p[t_now][x][y-1][z+1];
       
@@ -664,7 +665,7 @@ void alpha_17_call()
 void alpha_18_call()
 {
       // alpha = 0 calculate u * xi and u square  xi(18) {  0, -1, -1, }
-            
+      
       //load p(x-xia) and u(x-xia)
       p_load = p[t_now][x][y+1][z+1];
       
@@ -784,7 +785,7 @@ void free_array_u()
 
 void useage()
 {
-    fprintf(stderr, "\n>> lwacm, a benchmark tool for LBM kernel\n");
+    fprintf(stderr, "\n>> lwacm, a benchmark tool for LWACM kernel\n");
     fprintf(stderr, "   usage: lwacm <flag> <parameter>\n");
     fprintf(stderr, "          flag: s <parameter:int>, specify the domain size\n");
     fprintf(stderr, "          flag: t <parameter:int>, specify the max time step\n");
@@ -1011,8 +1012,10 @@ int main( int argc, char *argv[] )
     fprintf(stderr, "done\n\n   > updating cell...    ");
     
     // record the start time
-    time(&begin);
-    start_t = clock();
+    //time(&begin);
+    //start_t = clock();
+    
+    gettimeofday( &tm_start, NULL );
     
     // for all time step t
     for( t = 0; t < T_MAX; t++)
@@ -1214,31 +1217,33 @@ int main( int argc, char *argv[] )
         t_next = 1-t_next;
     }
     
+    gettimeofday( &tm_end, NULL );
+    
     fprintf(stderr, "done\n");
     
     // record the end time
-    time(&end);
-    sec_real = difftime(end, begin);
     
-    end_t = clock();
-    sec_cpu = (double)(end_t-start_t) / CLOCKS_PER_SEC;
+    sec_elapsed = (tm_end.tv_sec-tm_start.tv_sec) + (tm_end.tv_usec-tm_start.tv_usec)/1000000.0;
+    
+    //time(&end);
+    //sec_real = difftime(end, begin);
+    
+    //end_t = clock();
+    //sec_cpu = (double)(end_t-start_t) / CLOCKS_PER_SEC;
     
     // free dynamically allocated array p and u
     free_array_p();
     free_array_u();
     
-    nodes = N_X * N_Y * N_Z;
-    domain_size = N_X * N_Y * N_Z * T_MAX;
-    mlups_real = domain_size/sec_real/1000000.0;
-    mlups_cpu = domain_size/sec_cpu/1000000.0;
+    domain_size = N_X * N_Y * N_Z;
+    total_lattice_update = N_X * N_Y * N_Z * T_MAX;
+    mlups = total_lattice_update/sec_elapsed/1000000.0;
     
-    fprintf(stderr, "\n   Wall Clock:  %f seconds\n", sec_real );
-    fprintf(stderr, "   CPU Timer:   %f seconds\n", sec_cpu );
+    fprintf(stderr, "\n   Wall Clock:  %f seconds\n", sec_elapsed );
     fprintf(stderr, "   domain size: %f\n", domain_size );
-    fprintf(stderr, "   MLUps(CPU):  %f\n", mlups_cpu );
-    fprintf(stderr, "   MLUps(Wall): %f\n\n", mlups_real );
+    fprintf(stderr, "   MLUps(Wall): %f\n\n", mlups );
     
-    fprintf(fileout, "%d    %f    %f    %f    %f    %f\n", N_X, nodes, sec_real, sec_cpu, mlups_cpu, mlups_real);
+    fprintf(fileout, "%d    %f    %f    %f\n", N_X, domain_size, sec_elapsed, mlups);
     fclose(fileout);
     
     return 0;

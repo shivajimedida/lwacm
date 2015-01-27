@@ -1,7 +1,7 @@
 # make file for lwacm
 
 CC := gcc
-CFLAGS := -Wall -O3 -static
+CFLAGS := -Wall -O3
 
 SRC := $(wildcard ./*.c)
 BIN := $(SRC:.c=)
