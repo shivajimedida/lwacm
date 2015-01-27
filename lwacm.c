@@ -87,7 +87,7 @@ double ****p = NULL;
 
 // array to store value u
 //         t |  x  |  y   |  z    |u_xyz, t=0 is t, t=1 is t+1
-// double u[2][N_X+2][N_Y+2][N_Z+2][3];
+// double u[2][N_X+2][N_Y+2][3][N_Z+2];
 
 // 5 dimensional array pointer for dynamic memory allocation
 double *****u = NULL;
@@ -114,7 +114,7 @@ double u_load[3] = {0, 0, 0};
 // this is a debug function
 void sum_up_p()
 {
-    printf("\n>> step = %d ", t);
+    fprintf(stderr,"\n   > step = %d ", t);
     
     // part to sum up rho globally
     double result = 0;
@@ -131,7 +131,7 @@ void sum_up_p()
         }
     }
     
-    printf("   sum of all rho[x][y][z] = %e ", result );
+    fprintf(stderr,"   sum of all rho[x][y][z] = %e ", result );
 }
 
 // small function to show progress bar if you are tired of waiting
@@ -141,17 +141,17 @@ void progress_bar()
     
     i = t*100/T_MAX;
     
-    if(i < 10) { printf("   [00%d %%] ", i); }    
-    else if(i < 100){ printf("   [0%d %%] ", i); }
-    else { printf("   [%d %%] ", i); }
+    fprintf(stderr, "\r");
+    
+    if(i < 10) { fprintf(stderr, "   [00%d %%] ", i); }    
+    else if(i < 100){ fprintf(stderr, "   [0%d %%] ", i); }
+    else { fprintf(stderr, "   [%d %%] ", i); }
         
     for(j = 0; j < i; ++j)
     {
-        if(j == i-1){ printf(">"); }
-        else{ printf("="); }
+        if(j == i-1){ fprintf(stderr, ">"); }
+        else{ fprintf(stderr, "="); }
     }
-        
-    printf("\r");
     
     fflush(stdout);
 }
@@ -164,9 +164,9 @@ void alpha_0_call()
       //load p(x-xia) and u(x-xia)
       p_load = p[t_now][x][y][z];
       
-      u_load[0] = u[t_now][x][y][z][0];
-      u_load[1] = u[t_now][x][y][z][1];
-      u_load[2] = u[t_now][x][y][z][2];
+      u_load[0] = u[t_now][x][y][0][z];
+      u_load[1] = u[t_now][x][y][1][z];
+      u_load[2] = u[t_now][x][y][2][z];
       
       u_xi = 0;
       u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
@@ -193,13 +193,13 @@ void alpha_1_call()
       //load p(x-xia) and u(x-xia)
       p_load = p[t_now][x-1][y][z];
       
-      u_load[0] = u[t_now][x-1][y][z][0];
-      u_load[1] = u[t_now][x-1][y][z][1];
-      u_load[2] = u[t_now][x-1][y][z][2];
+      u_load[0] = u[t_now][x-1][y][0][z];
+      u_load[1] = u[t_now][x-1][y][1][z];
+      u_load[2] = u[t_now][x-1][y][2][z];
       
       u_xi = u_load[0];
       u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][z][0];
+      u_x_xi = u[t_now][x][y][0][z];
       
       // step 5, compute f(e)(x-xi[0], t)
       f_e = 1.0/18.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
@@ -221,13 +221,13 @@ void alpha_2_call()
       //load p(x-xia) and u(x-xia)
       p_load = p[t_now][x+1][y][z];
       
-      u_load[0] = u[t_now][x+1][y][z][0];
-      u_load[1] = u[t_now][x+1][y][z][1];
-      u_load[2] = u[t_now][x+1][y][z][2];
+      u_load[0] = u[t_now][x+1][y][0][z];
+      u_load[1] = u[t_now][x+1][y][1][z];
+      u_load[2] = u[t_now][x+1][y][2][z];
       
       u_xi = u_load[0]*(-1);
       u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][z][0] * (-1);
+      u_x_xi = u[t_now][x][y][0][z] * (-1);
       
       // step 5, compute f(e)(x-xi[0], t)   
       f_e = 1.0/18.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
@@ -249,13 +249,13 @@ void alpha_3_call()
       //load p(x-xia) and u(x-xia)
       p_load = p[t_now][x][y-1][z];
       
-      u_load[0] = u[t_now][x][y-1][z][0];
-      u_load[1] = u[t_now][x][y-1][z][1];
-      u_load[2] = u[t_now][x][y-1][z][2];
+      u_load[0] = u[t_now][x][y-1][0][z];
+      u_load[1] = u[t_now][x][y-1][1][z];
+      u_load[2] = u[t_now][x][y-1][2][z];
       
       u_xi = u_load[1];
       u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][z][1];
+      u_x_xi = u[t_now][x][y][1][z];
       
       // step 5, compute f(e)(x-xi[0], t)
       f_e = 1.0/18.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
@@ -277,13 +277,13 @@ void alpha_4_call()
       //load p(x-xia) and u(x-xia)
       p_load = p[t_now][x][y+1][z];
       
-      u_load[0] = u[t_now][x][y+1][z][0];
-      u_load[1] = u[t_now][x][y+1][z][1];
-      u_load[2] = u[t_now][x][y+1][z][2];
+      u_load[0] = u[t_now][x][y+1][0][z];
+      u_load[1] = u[t_now][x][y+1][1][z];
+      u_load[2] = u[t_now][x][y+1][2][z];
       
       u_xi = u_load[1]*(-1);
       u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][z][1] * (-1);
+      u_x_xi = u[t_now][x][y][1][z] * (-1);
       
       // step 5, compute f(e)(x-xi[0], t)   
       f_e = 1.0/18.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
@@ -305,13 +305,13 @@ void alpha_5_call()
       //load p(x-xia) and u(x-xia)
       p_load = p[t_now][x][y][z-1];
       
-      u_load[0] = u[t_now][x][y][z-1][0];
-      u_load[1] = u[t_now][x][y][z-1][1];
-      u_load[2] = u[t_now][x][y][z-1][2];
+      u_load[0] = u[t_now][x][y][0][z-1];
+      u_load[1] = u[t_now][x][y][1][z-1];
+      u_load[2] = u[t_now][x][y][2][z-1];
       
       u_xi = u_load[2];
       u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][z][2];
+      u_x_xi = u[t_now][x][y][2][z];
       
       // step 5, compute f(e)(x-xi[0], t)
       f_e = 1.0/18.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
@@ -333,13 +333,13 @@ void alpha_6_call()
       //load p(x-xia) and u(x-xia)
       p_load = p[t_now][x][y][z+1];
       
-      u_load[0] = u[t_now][x][y][z+1][0];
-      u_load[1] = u[t_now][x][y][z+1][1];
-      u_load[2] = u[t_now][x][y][z+1][2];
+      u_load[0] = u[t_now][x][y][0][z+1];
+      u_load[1] = u[t_now][x][y][1][z+1];
+      u_load[2] = u[t_now][x][y][2][z+1];
       
       u_xi = u_load[2]*(-1);
       u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][z][2] * (-1);
+      u_x_xi = u[t_now][x][y][2][z] * (-1);
       
       // step 5, compute f(e)(x-xi[0], t)   
       f_e = 1.0/18.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
@@ -361,13 +361,13 @@ void alpha_7_call()
       //load p(x-xia) and u(x-xia)
       p_load = p[t_now][x-1][y-1][z];
       
-      u_load[0] = u[t_now][x-1][y-1][z][0];
-      u_load[1] = u[t_now][x-1][y-1][z][1];
-      u_load[2] = u[t_now][x-1][y-1][z][2];
+      u_load[0] = u[t_now][x-1][y-1][0][z];
+      u_load[1] = u[t_now][x-1][y-1][1][z];
+      u_load[2] = u[t_now][x-1][y-1][2][z];
       
       u_xi = u_load[0] + u_load[1];
       u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][z][0] + u[t_now][x][y][z][1];
+      u_x_xi = u[t_now][x][y][0][z] + u[t_now][x][y][1][z];
       
       // step 5, compute f(e)(x-xi[0], t)
       f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
@@ -389,13 +389,13 @@ void alpha_8_call()
       //load p(x-xia) and u(x-xia)
       p_load = p[t_now][x+1][y-1][z];
       
-      u_load[0] = u[t_now][x+1][y-1][z][0];
-      u_load[1] = u[t_now][x+1][y-1][z][1];
-      u_load[2] = u[t_now][x+1][y-1][z][2];
+      u_load[0] = u[t_now][x+1][y-1][0][z];
+      u_load[1] = u[t_now][x+1][y-1][1][z];
+      u_load[2] = u[t_now][x+1][y-1][2][z];
       
       u_xi = u_load[0]*(-1) + u_load[1];
       u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][z][0] * (-1) + u[t_now][x][y][z][1];
+      u_x_xi = u[t_now][x][y][0][z] * (-1) + u[t_now][x][y][1][z];
       
       // step 5, compute f(e)(x-xi[0], t)   
       f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
@@ -417,13 +417,13 @@ void alpha_9_call()
       //load p(x-xia) and u(x-xia)
       p_load = p[t_now][x-1][y+1][z];
       
-      u_load[0] = u[t_now][x-1][y+1][z][0];
-      u_load[1] = u[t_now][x-1][y+1][z][1];
-      u_load[2] = u[t_now][x-1][y+1][z][2];
+      u_load[0] = u[t_now][x-1][y+1][0][z];
+      u_load[1] = u[t_now][x-1][y+1][1][z];
+      u_load[2] = u[t_now][x-1][y+1][2][z];
       
       u_xi = u_load[0] + u_load[1]*(-1);
       u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][z][0] + u[t_now][x][y][z][1] * (-1);
+      u_x_xi = u[t_now][x][y][0][z] + u[t_now][x][y][1][z] * (-1);
       
       // step 5, compute f(e)(x-xi[0], t)
       f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
@@ -445,13 +445,13 @@ void alpha_10_call()
       //load p(x-xia) and u(x-xia)
       p_load = p[t_now][x+1][y+1][z];
       
-      u_load[0] = u[t_now][x+1][y+1][z][0];
-      u_load[1] = u[t_now][x+1][y+1][z][1];
-      u_load[2] = u[t_now][x+1][y+1][z][2];
+      u_load[0] = u[t_now][x+1][y+1][0][z];
+      u_load[1] = u[t_now][x+1][y+1][1][z];
+      u_load[2] = u[t_now][x+1][y+1][2][z];
       
       u_xi = u_load[0]*(-1) + u_load[1]*(-1);
       u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][z][0] * (-1) + u[t_now][x][y][z][1] * (-1);
+      u_x_xi = u[t_now][x][y][0][z] * (-1) + u[t_now][x][y][1][z] * (-1);
       
       // step 5, compute f(e)(x-xi[0], t)   
       f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
@@ -473,13 +473,13 @@ void alpha_11_call()
       //load p(x-xia) and u(x-xia)
       p_load = p[t_now][x-1][y][z-1];
       
-      u_load[0] = u[t_now][x-1][y][z-1][0];
-      u_load[1] = u[t_now][x-1][y][z-1][1];
-      u_load[2] = u[t_now][x-1][y][z-1][2];
+      u_load[0] = u[t_now][x-1][y][0][z-1];
+      u_load[1] = u[t_now][x-1][y][1][z-1];
+      u_load[2] = u[t_now][x-1][y][2][z-1];
       
       u_xi = u_load[0] + u_load[2];
       u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][z][0] + u[t_now][x][y][z][2];
+      u_x_xi = u[t_now][x][y][0][z] + u[t_now][x][y][2][z];
       
       // step 5, compute f(e)(x-xi[0], t)
       f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
@@ -501,13 +501,13 @@ void alpha_12_call()
       //load p(x-xia) and u(x-xia)
       p_load = p[t_now][x+1][y][z-1];
       
-      u_load[0] = u[t_now][x+1][y][z-1][0];
-      u_load[1] = u[t_now][x+1][y][z-1][1];
-      u_load[2] = u[t_now][x+1][y][z-1][2];
+      u_load[0] = u[t_now][x+1][y][0][z-1];
+      u_load[1] = u[t_now][x+1][y][1][z-1];
+      u_load[2] = u[t_now][x+1][y][2][z-1];
       
       u_xi = u_load[0]*(-1) + u_load[2];
       u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][z][0] * (-1) + u[t_now][x][y][z][2];
+      u_x_xi = u[t_now][x][y][0][z] * (-1) + u[t_now][x][y][2][z];
       
       // step 5, compute f(e)(x-xi[0], t)   
       f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
@@ -529,13 +529,13 @@ void alpha_13_call()
       //load p(x-xia) and u(x-xia)
       p_load = p[t_now][x-1][y][z+1];
       
-      u_load[0] = u[t_now][x-1][y][z+1][0];
-      u_load[1] = u[t_now][x-1][y][z+1][1];
-      u_load[2] = u[t_now][x-1][y][z+1][2];
+      u_load[0] = u[t_now][x-1][y][0][z+1];
+      u_load[1] = u[t_now][x-1][y][1][z+1];
+      u_load[2] = u[t_now][x-1][y][2][z+1];
       
       u_xi = u_load[0] + u_load[2]*(-1);
       u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][z][0] + u[t_now][x][y][z][2] * (-1);
+      u_x_xi = u[t_now][x][y][0][z] + u[t_now][x][y][2][z] * (-1);
       
       // step 5, compute f(e)(x-xi[0], t)
       f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
@@ -557,13 +557,13 @@ void alpha_14_call()
       //load p(x-xia) and u(x-xia)
       p_load = p[t_now][x+1][y][z+1];
       
-      u_load[0] = u[t_now][x+1][y][z+1][0];
-      u_load[1] = u[t_now][x+1][y][z+1][1];
-      u_load[2] = u[t_now][x+1][y][z+1][2];
+      u_load[0] = u[t_now][x+1][y][0][z+1];
+      u_load[1] = u[t_now][x+1][y][1][z+1];
+      u_load[2] = u[t_now][x+1][y][2][z+1];
       
       u_xi = u_load[0]*(-1) + u_load[2]*(-1);
       u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][z][0] * (-1) + u[t_now][x][y][z][2] * (-1);
+      u_x_xi = u[t_now][x][y][0][z] * (-1) + u[t_now][x][y][2][z] * (-1);
       
       // step 5, compute f(e)(x-xi[0], t)   
       f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
@@ -585,13 +585,13 @@ void alpha_15_call()
       //load p(x-xia) and u(x-xia)
       p_load = p[t_now][x][y-1][z-1];
       
-      u_load[0] = u[t_now][x][y-1][z-1][0];
-      u_load[1] = u[t_now][x][y-1][z-1][1];
-      u_load[2] = u[t_now][x][y-1][z-1][2];
+      u_load[0] = u[t_now][x][y-1][0][z-1];
+      u_load[1] = u[t_now][x][y-1][1][z-1];
+      u_load[2] = u[t_now][x][y-1][2][z-1];
       
       u_xi = u_load[1] + u_load[2];
       u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][z][1] + u[t_now][x][y][z][2];
+      u_x_xi = u[t_now][x][y][1][z] + u[t_now][x][y][2][z];
       
       // step 5, compute f(e)(x-xi[0], t)
       f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
@@ -613,13 +613,13 @@ void alpha_16_call()
       //load p(x-xia) and u(x-xia)
       p_load = p[t_now][x][y+1][z-1];
       
-      u_load[0] = u[t_now][x][y+1][z-1][0];
-      u_load[1] = u[t_now][x][y+1][z-1][1];
-      u_load[2] = u[t_now][x][y+1][z-1][2];
+      u_load[0] = u[t_now][x][y+1][0][z-1];
+      u_load[1] = u[t_now][x][y+1][1][z-1];
+      u_load[2] = u[t_now][x][y+1][2][z-1];
       
       u_xi = u_load[1]*(-1) + u_load[2];
       u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][z][1] * (-1) + u[t_now][x][y][z][2];
+      u_x_xi = u[t_now][x][y][1][z] * (-1) + u[t_now][x][y][2][z];
       
       // step 5, compute f(e)(x-xi[0], t)   
       f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
@@ -641,13 +641,13 @@ void alpha_17_call()
       //load p(x-xia) and u(x-xia)
       p_load = p[t_now][x][y-1][z+1];
       
-      u_load[0] = u[t_now][x][y-1][z+1][0];
-      u_load[1] = u[t_now][x][y-1][z+1][1];
-      u_load[2] = u[t_now][x][y-1][z+1][2];
+      u_load[0] = u[t_now][x][y-1][0][z+1];
+      u_load[1] = u[t_now][x][y-1][1][z+1];
+      u_load[2] = u[t_now][x][y-1][2][z+1];
       
       u_xi = u_load[1] + u_load[2] * (-1);
       u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][z][1] + u[t_now][x][y][z][2] * (-1);
+      u_x_xi = u[t_now][x][y][1][z] + u[t_now][x][y][2][z] * (-1);
       
       // step 5, compute f(e)(x-xi[0], t)
       f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
@@ -669,13 +669,13 @@ void alpha_18_call()
       //load p(x-xia) and u(x-xia)
       p_load = p[t_now][x][y+1][z+1];
       
-      u_load[0] = u[t_now][x][y+1][z+1][0];
-      u_load[1] = u[t_now][x][y+1][z+1][1];
-      u_load[2] = u[t_now][x][y+1][z+1][2];
+      u_load[0] = u[t_now][x][y+1][0][z+1];
+      u_load[1] = u[t_now][x][y+1][1][z+1];
+      u_load[2] = u[t_now][x][y+1][2][z+1];
       
       u_xi = u_load[1] * (-1) + u_load[2] * (-1);
       u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][z][1] * (-1) + u[t_now][x][y][z][2] * (-1);
+      u_x_xi = u[t_now][x][y][1][z] * (-1) + u[t_now][x][y][2][z] * (-1);
       
       // step 5, compute f(e)(x-xi[0], t)   
       f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
@@ -695,30 +695,30 @@ void free_array_p()
     fprintf(stderr, "\n   > free array p...    ");
     
     // free mem for z
-    for(i = 0; i < 2; i++)
+    for(t = 0; t < 2; t++)
     {
         for(x = 0; x < N_X+2; x++)
         {
             for(y = 0; y < N_Y+2; y++)
             {
-                free( p[i][x][y] );
+                free( p[t][x][y] );
             }  
         }
     }
     
     // free mem for y
-    for(i = 0; i < 2; i++)
+    for(t = 0; t < 2; t++)
     {
         for(x = 0; x < N_X+2; x++)
         {
-            free( p[i][x] );
+            free( p[t][x] );
         }
     }
     
     // free mem for x
-    for(i = 0; i < 2; i++)
+    for(t = 0; t < 2; t++)
     {
-        free( p[i] );
+        free( p[t] );
     }
     
     // free data pointer
@@ -732,46 +732,46 @@ void free_array_u()
 {
     fprintf(stderr, "\n   > free array u...    ");
     
-    // free mem for u_xyz
-    for(i = 0; i < 2; i++)
+    // free mem for z
+    for(t = 0; t < 2; t++)
     {
         for(x = 0; x < N_X+2; x++)
         {
             for(y = 0; y < N_Y+2; y++)
             {
-                for(z = 0; z < N_Z+2; z++)
+                for(i = 0; i < 3; i++)
                 {
-                    free( u[i][x][y][z] );
+                    free( u[t][x][y][i] );
                 }
             }
         }
     }
     
-    // free mem for z
-    for(i = 0; i < 2; i++)
+    // free mem for u_xyz
+    for(t = 0; t < 2; t++)
     {
         for(x = 0; x < N_X+2; x++)
         {
             for(y = 0; y < N_Y+2; y++)
             {
-                free( u[i][x][y] );
+                free( u[t][x][y] );
             }  
         }
     }
     
     // free mem for y
-    for(i = 0; i < 2; i++)
+    for(t = 0; t < 2; t++)
     {
         for(x = 0; x < N_X+2; x++)
         {
-            free( u[i][x] );
+            free( u[t][x] );
         }
     }
     
     // free mem for x
-    for(i = 0; i < 2; i++)
+    for(t = 0; t < 2; t++)
     {
-        free( u[i] );
+        free( u[t] );
     }
     
     // free data pointer
@@ -870,6 +870,8 @@ int main( int argc, char *argv[] )
         fprintf(stderr, "\n   size of array u : %lld Bytes\n", bytes);
     }
     
+    
+    
     fprintf(stderr, "\n   > start allocating memory for array p...    ");
     
     // allocate mem for array pointer
@@ -882,11 +884,11 @@ int main( int argc, char *argv[] )
     }
     
     // allocate mem for t_now and t_next
-    for(i = 0; i < 2; i++)
+    for(t = 0; t < 2; t++)
     {
-        p[i] = malloc( (N_X+2) * sizeof(double**) );
+        p[t] = malloc( (N_X+2) * sizeof(double**) );
         
-        if(p[i] == NULL)
+        if(p[t] == NULL)
         {
             fprintf(stderr, "\n   error allocating memory for t_now/t_next (size = %d)\n\n", N_X);
             return 1;
@@ -896,9 +898,9 @@ int main( int argc, char *argv[] )
         // allocate mem for N_X
         for(x = 0; x < N_X+2; x++)
         {
-            p[i][x] = malloc( (N_Y+2) * sizeof(double*) );
+            p[t][x] = malloc( (N_Y+2) * sizeof(double*) );
         
-            if(p[i][x] == NULL)
+            if(p[t][x] == NULL)
             {
                 fprintf(stderr, "\n   error allocating memory for N_X (size = %d)\n\n", N_Y);
                 return 1;
@@ -908,9 +910,9 @@ int main( int argc, char *argv[] )
             // allocate mem for N_X(actuall data)
             for(y = 0; y < N_Y+2; y++)
             {
-                p[i][x][y] = malloc( (N_Z+2) * sizeof(double) );
+                p[t][x][y] = malloc( (N_Z+2) * sizeof(double) );
         
-                if(p[i][x][y] == NULL)
+                if(p[t][x][y] == NULL)
                 {
                     fprintf(stderr, "\n   error allocating memory for N_Y (size =%d)\n\n", N_Z);
                     return 1;
@@ -919,6 +921,7 @@ int main( int argc, char *argv[] )
             }
         }
     }
+    
     
     fprintf(stderr, "done\n\n   > start allocating memory for array u...    ");
     
@@ -932,11 +935,11 @@ int main( int argc, char *argv[] )
     }
     
     // allocate mem for t_now and t_next
-    for(i = 0; i < 2; i++)
+    for(t = 0; t < 2; t++)
     {
-        u[i] = malloc( (N_X+2) * sizeof(double***) );
+        u[t] = malloc( (N_X+2) * sizeof(double***) );
         
-        if(u[i] == NULL)
+        if(u[t] == NULL)
         {
             fprintf(stderr, "\n   error allocating memory for t_now/t_next(size = %d)\n\n", N_X);
             return 1;
@@ -946,9 +949,9 @@ int main( int argc, char *argv[] )
         // allocate mem for N_X
         for(x = 0; x < N_X+2; x++)
         {
-            u[i][x] = malloc( (N_Y+2) * sizeof(double**) );
+            u[t][x] = malloc( (N_Y+2) * sizeof(double**) );
         
-            if(u[i][x] == NULL)
+            if(u[t][x] == NULL)
             {
                 fprintf(stderr, "\n   error allocating memory for N_X(size = %d)\n\n", N_Y);
                 return 1;
@@ -958,9 +961,9 @@ int main( int argc, char *argv[] )
             // allocate mem for N_X
             for(y = 0; y < N_Y+2; y++)
             {
-                u[i][x][y] = malloc( (N_Z+2) * sizeof(double*) );
+                u[t][x][y] = malloc( (N_Z+2) * sizeof(double*) );
         
-                if(u[i][x][y] == NULL)
+                if(u[t][x][y] == NULL)
                 {
                     fprintf(stderr, "\n   error allocating memory for N_Y(size =%d)\n\n", N_Z);
                     return 1;
@@ -968,11 +971,11 @@ int main( int argc, char *argv[] )
                 //else { printf("\n   mem [%d][%d][%d] ok\n", i, x, y); }
                 
                 // allocate mem for N_Z
-                for(z = 0; z < N_Z+2; z++)
+                for(i = 0; i < 3; i++)
                 {
-                    u[i][x][y][z] = malloc( 3 * sizeof(double) );
+                    u[t][x][y][i] = malloc( (N_Z+2) * sizeof(double) );
         
-                    if(u[i][x][y][z] == NULL)
+                    if(u[t][x][y][i] == NULL)
                     {
                         fprintf(stderr, "\n   error allocating memory for N_Z(size = 3)\n\n");
                         return 1;
@@ -994,13 +997,13 @@ int main( int argc, char *argv[] )
             p[0][x][y][z] = 1.0f; // set it to 1.0
             p[1][x][y][z] = 1.0f; // set it to 1.0
             
-            u[0][x][y][z][0] = 0;
-            u[0][x][y][z][1] = 0;
-            u[0][x][y][z][2] = 0;
+            u[0][x][y][0][z] = 0;
+            u[0][x][y][1][z] = 0;
+            u[0][x][y][2][z] = 0;
             
-            u[1][x][y][z][0] = 0;
-            u[1][x][y][z][1] = 0;
-            u[1][x][y][z][2] = 0;
+            u[1][x][y][0][z] = 0;
+            u[1][x][y][1][z] = 0;
+            u[1][x][y][2][z] = 0;
         }
       }
     }
@@ -1059,9 +1062,9 @@ int main( int argc, char *argv[] )
                 p[t_next][x][y][z] = p_load;
                 
                 // step 12, compute u(x, t+1)
-                u[t_next][x][y][z][0] = ( f[1]-f[2]+f[7]-f[8]+f[9]-f[10]+f[11]-f[12]+f[13]-f[14] )/p_load;
-                u[t_next][x][y][z][1] = ( f[3]-f[4]+f[7]+f[8]-f[9]-f[10]+f[15]-f[16]+f[17]-f[18] )/p_load;
-                u[t_next][x][y][z][2] = ( f[5]-f[6]+f[11]+f[12]-f[13]-f[14]+f[15]+f[16]-f[17]-f[18] )/p_load;
+                u[t_next][x][y][0][z] = ( f[1]-f[2]+f[7]-f[8]+f[9]-f[10]+f[11]-f[12]+f[13]-f[14] )/p_load;
+                u[t_next][x][y][1][z] = ( f[3]-f[4]+f[7]+f[8]-f[9]-f[10]+f[15]-f[16]+f[17]-f[18] )/p_load;
+                u[t_next][x][y][2][z] = ( f[5]-f[6]+f[11]+f[12]-f[13]-f[14]+f[15]+f[16]-f[17]-f[18] )/p_load;
             }
           }
         }
@@ -1078,14 +1081,14 @@ int main( int argc, char *argv[] )
             for( y = 1; y < N_Y+1; y++)
             {
                 p[t_next][ x ][ y ][ 0 ] = p[t_next][ x ][ y ][N_Z];
-                u[t_next][ x ][ y ][ 0 ][ 0 ] = u[t_next][ x ][ y ][N_Z][ 0 ];
-                u[t_next][ x ][ y ][ 0 ][ 1 ] = u[t_next][ x ][ y ][N_Z][ 1 ];
-                u[t_next][ x ][ y ][ 0 ][ 2 ] = u[t_next][ x ][ y ][N_Z][ 2 ];
+                u[t_next][ x ][ y ][ 0 ][ 0 ] = u[t_next][ x ][ y ][ 0 ][N_Z];
+                u[t_next][ x ][ y ][ 1 ][ 0 ] = u[t_next][ x ][ y ][ 1 ][N_Z];
+                u[t_next][ x ][ y ][ 2 ][ 0 ] = u[t_next][ x ][ y ][ 2 ][N_Z];
           
                 p[t_next][ x ][ y ][N_Z+1] = p[t_next][ x ][ y ][1];
-                u[t_next][ x ][ y ][N_Z+1][ 0 ] = u[t_next][ x ][ y ][ 1 ][ 0 ];
-                u[t_next][ x ][ y ][N_Z+1][ 1 ] = u[t_next][ x ][ y ][ 1 ][ 1 ];
-                u[t_next][ x ][ y ][N_Z+1][ 2 ] = u[t_next][ x ][ y ][ 1 ][ 2 ];
+                u[t_next][ x ][ y ][ 0 ][N_Z+1] = u[t_next][ x ][ y ][ 0 ][ 1 ];
+                u[t_next][ x ][ y ][ 1 ][N_Z+1] = u[t_next][ x ][ y ][ 1 ][ 1 ];
+                u[t_next][ x ][ y ][ 2 ][N_Z+1] = u[t_next][ x ][ y ][ 2 ][ 1 ];
           
             }
         }
@@ -1096,14 +1099,14 @@ int main( int argc, char *argv[] )
             for( z = 1; z < N_Z+1; z++)
             {
                 p[t_next][ x ][ 0 ][ z ] = p[t_next][ x ][N_Y][ z ];
-                u[t_next][ x ][ 0 ][ z ][ 0 ] = u[t_next][ x ][N_Y][ z ][ 0 ];
-                u[t_next][ x ][ 0 ][ z ][ 1 ] = u[t_next][ x ][N_Y][ z ][ 1 ];
-                u[t_next][ x ][ 0 ][ z ][ 2 ] = u[t_next][ x ][N_Y][ z ][ 2 ];
+                u[t_next][ x ][ 0 ][ 0 ][ z ] = u[t_next][ x ][N_Y][ 0 ][ z ];
+                u[t_next][ x ][ 0 ][ 1 ][ z ] = u[t_next][ x ][N_Y][ 1 ][ z ];
+                u[t_next][ x ][ 0 ][ 2 ][ z ] = u[t_next][ x ][N_Y][ 2 ][ z ];
           
                 p[t_next][ x ][N_Y+1][ z ] = p[t_next][ x ][ 1 ][ z ];
-                u[t_next][ x ][N_Y+1][ z ][ 0 ] = u[t_next][ x ][ 1 ][ z ][ 0 ];
-                u[t_next][ x ][N_Y+1][ z ][ 1 ] = u[t_next][ x ][ 1 ][ z ][ 1 ];
-                u[t_next][ x ][N_Y+1][ z ][ 2 ] = u[t_next][ x ][ 1 ][ z ][ 2 ];
+                u[t_next][ x ][N_Y+1][ 0 ][ z ] = u[t_next][ x ][ 1 ][ 0 ][ z ];
+                u[t_next][ x ][N_Y+1][ 1 ][ z ] = u[t_next][ x ][ 1 ][ 1 ][ z ];
+                u[t_next][ x ][N_Y+1][ 2 ][ z ] = u[t_next][ x ][ 1 ][ 2 ][ z ];
             }
         }
         
@@ -1113,14 +1116,14 @@ int main( int argc, char *argv[] )
             for( z = 1; z < N_Z+1; z++)
             {
                 p[t_next][ 0 ][ y ][ z ] = p[t_next][N_X][ y ][ z ];
-                u[t_next][ 0 ][ y ][ z ][ 0 ] = u[t_next][N_X][ y ][ z ][ 0 ];
-                u[t_next][ 0 ][ y ][ z ][ 1 ] = u[t_next][N_X][ y ][ z ][ 1 ];
-                u[t_next][ 0 ][ y ][ z ][ 2 ] = u[t_next][N_X][ y ][ z ][ 2 ];
+                u[t_next][ 0 ][ y ][ 0 ][ z ] = u[t_next][N_X][ y ][ 0 ][ z ];
+                u[t_next][ 0 ][ y ][ 1 ][ z ] = u[t_next][N_X][ y ][ 1 ][ z ];
+                u[t_next][ 0 ][ y ][ 2 ][ z ] = u[t_next][N_X][ y ][ 2 ][ z ];
           
                 p[t_next][N_X+1][ y ][ z ] = p[t_next][ 1 ][ y ][ z ];
-                u[t_next][N_X+1][ y ][ z ][ 0 ] = u[t_next][ 1 ][ y ][ z ][ 0 ];
-                u[t_next][N_X+1][ y ][ z ][ 1 ] = u[t_next][ 1 ][ y ][ z ][ 1 ];
-                u[t_next][N_X+1][ y ][ z ][ 2 ] = u[t_next][ 1 ][ y ][ z ][ 2 ];
+                u[t_next][N_X+1][ y ][ 0 ][ z ] = u[t_next][ 1 ][ y ][ 0 ][ z ];
+                u[t_next][N_X+1][ y ][ 1 ][ z ] = u[t_next][ 1 ][ y ][ 1 ][ z ];
+                u[t_next][N_X+1][ y ][ 2 ][ z ] = u[t_next][ 1 ][ y ][ 2 ][ z ];
             }
         }
       
@@ -1130,27 +1133,27 @@ int main( int argc, char *argv[] )
         {
             // (x, 0, 0) 
             p[t_next][ x ][ 0 ][ 0 ] = p[t_next][ x ][N_Y][N_Z];
-            u[t_next][ x ][ 0 ][ 0 ][ 0 ] = u[t_next][ x ][N_Y][N_Z][ 0 ];
-            u[t_next][ x ][ 0 ][ 0 ][ 1 ] = u[t_next][ x ][N_Y][N_Z][ 1 ];
-            u[t_next][ x ][ 0 ][ 0 ][ 2 ] = u[t_next][ x ][N_Y][N_Z][ 2 ];
+            u[t_next][ x ][ 0 ][ 0 ][ 0 ] = u[t_next][ x ][N_Y][ 0 ][N_Z];
+            u[t_next][ x ][ 0 ][ 1 ][ 0 ] = u[t_next][ x ][N_Y][ 1 ][N_Z];
+            u[t_next][ x ][ 0 ][ 2 ][ 0 ] = u[t_next][ x ][N_Y][ 2 ][N_Z];
           
             // (x, N_Y+1, N_Z+1)
             p[t_next][ x ][N_Y+1][N_Z+1] = p[t_next][ x ][ 1 ][ 1 ];
-            u[t_next][ x ][N_Y+1][N_Z+1][ 0 ] = u[t_next][ x ][ 1 ][ 1 ][ 0 ];
-            u[t_next][ x ][N_Y+1][N_Z+1][ 1 ] = u[t_next][ x ][ 1 ][ 1 ][ 1 ];
-            u[t_next][ x ][N_Y+1][N_Z+1][ 2 ] = u[t_next][ x ][ 1 ][ 1 ][ 2 ];
+            u[t_next][ x ][N_Y+1][ 0 ][N_Z+1] = u[t_next][ x ][ 1 ][ 0 ][ 1 ];
+            u[t_next][ x ][N_Y+1][ 1 ][N_Z+1] = u[t_next][ x ][ 1 ][ 1 ][ 1 ];
+            u[t_next][ x ][N_Y+1][ 2 ][N_Z+1] = u[t_next][ x ][ 1 ][ 2 ][ 1 ];
           
             // (x, 0, N_Z+1)
             p[t_next][ x ][ 0 ][N_Z+1] = p[t_next][ x ][N_Y][ 1 ];
-            u[t_next][ x ][ 0 ][N_Z+1][ 0 ] = u[t_next][ x ][N_Y][ 1 ][ 0 ];
-            u[t_next][ x ][ 0 ][N_Z+1][ 1 ] = u[t_next][ x ][N_Y][ 1 ][ 1 ];
-            u[t_next][ x ][ 0 ][N_Z+1][ 2 ] = u[t_next][ x ][N_Y][ 1 ][ 2 ];
+            u[t_next][ x ][ 0 ][ 0 ][N_Z+1] = u[t_next][ x ][N_Y][ 0 ][ 1 ];
+            u[t_next][ x ][ 0 ][ 1 ][N_Z+1] = u[t_next][ x ][N_Y][ 1 ][ 1 ];
+            u[t_next][ x ][ 0 ][ 2 ][N_Z+1] = u[t_next][ x ][N_Y][ 2 ][ 1 ];
           
             // (x, N_Y+1, 0)
             p[t_next][ x ][N_Y+1][ 0 ] = p[t_next][ x ][ 1 ][N_Z];
-            u[t_next][ x ][N_Y+1][ 0 ][ 0 ] = u[t_next][ x ][ 1 ][N_Z][ 0 ];
-            u[t_next][ x ][N_Y+1][ 0 ][ 1 ] = u[t_next][ x ][ 1 ][N_Z][ 1 ];
-            u[t_next][ x ][N_Y+1][ 0 ][ 2 ] = u[t_next][ x ][ 1 ][N_Z][ 2 ];
+            u[t_next][ x ][N_Y+1][ 0 ][ 0 ] = u[t_next][ x ][ 1 ][ 0 ][N_Z];
+            u[t_next][ x ][N_Y+1][ 1 ][ 0 ] = u[t_next][ x ][ 1 ][ 1 ][N_Z];
+            u[t_next][ x ][N_Y+1][ 2 ][ 0 ] = u[t_next][ x ][ 1 ][ 2 ][N_Z];
         }
         
         // lines y: 4
@@ -1158,27 +1161,27 @@ int main( int argc, char *argv[] )
         {
             // (0, y, 0) 
             p[t_next][ 0 ][ y ][ 0 ] = p[t_next][N_X][y][N_Z];
-            u[t_next][ 0 ][ y ][ 0 ][ 0 ] = u[t_next][N_X][ y ][N_Z][ 0 ];
-            u[t_next][ 0 ][ y ][ 0 ][ 1 ] = u[t_next][N_X][ y ][N_Z][ 1 ];
-            u[t_next][ 0 ][ y ][ 0 ][ 2 ] = u[t_next][N_X][ y ][N_Z][ 2 ];
+            u[t_next][ 0 ][ y ][ 0 ][ 0 ] = u[t_next][N_X][ y ][ 0 ][N_Z];
+            u[t_next][ 0 ][ y ][ 1 ][ 0 ] = u[t_next][N_X][ y ][ 1 ][N_Z];
+            u[t_next][ 0 ][ y ][ 2 ][ 0 ] = u[t_next][N_X][ y ][ 2 ][N_Z];
           
             // (N_X+1, y, N_Z+1)
             p[t_next][N_X+1][ y ][N_Z+1] = p[t_next][ 1 ][ y ][ 1 ];
-            u[t_next][N_X+1][ y ][N_Z+1][ 0 ] = u[t_next][ 1 ][ y ][ 1 ][ 0 ];
-            u[t_next][N_X+1][ y ][N_Z+1][ 1 ] = u[t_next][ 1 ][ y ][ 1 ][ 1 ];
-            u[t_next][N_X+1][ y ][N_Z+1][ 2 ] = u[t_next][ 1 ][ y ][ 1 ][ 2 ];
+            u[t_next][N_X+1][ y ][ 0 ][N_Z+1] = u[t_next][ 1 ][ y ][ 0 ][ 1 ];
+            u[t_next][N_X+1][ y ][ 1 ][N_Z+1] = u[t_next][ 1 ][ y ][ 1 ][ 1 ];
+            u[t_next][N_X+1][ y ][ 2 ][N_Z+1] = u[t_next][ 1 ][ y ][ 2 ][ 1 ];
           
             // (0, y, N_Z+1)
             p[t_next][ 0 ][ y ][N_Z+1] = p[t_next][N_X][ y ][ 1 ];
-            u[t_next][ 0 ][ y ][N_Z+1][ 0 ] = u[t_next][N_X][ y ][ 1 ][ 0 ];
-            u[t_next][ 0 ][ y ][N_Z+1][ 1 ] = u[t_next][N_X][ y ][ 1 ][ 1 ];
-            u[t_next][ 0 ][ y ][N_Z+1][ 2 ] = u[t_next][N_X][ y ][ 1 ][ 2 ];
+            u[t_next][ 0 ][ y ][ 0 ][N_Z+1] = u[t_next][N_X][ y ][ 0 ][ 1 ];
+            u[t_next][ 0 ][ y ][ 1 ][N_Z+1] = u[t_next][N_X][ y ][ 1 ][ 1 ];
+            u[t_next][ 0 ][ y ][ 2 ][N_Z+1] = u[t_next][N_X][ y ][ 2 ][ 1 ];
           
             // (N_X+1, y, 0)
             p[t_next][N_X+1][ y ][ 0 ] = p[t_next][ 1 ][ y ][N_Z];
-            u[t_next][N_X+1][ y ][ 0 ][ 0 ] = u[t_next][ 1 ][ y ][N_Z][ 0 ];
-            u[t_next][N_X+1][ y ][ 0 ][ 1 ] = u[t_next][ 1 ][ y ][N_Z][ 1 ];
-            u[t_next][N_X+1][ y ][ 0 ][ 2 ] = u[t_next][ 1 ][ y ][N_Z][ 2 ];
+            u[t_next][N_X+1][ y ][ 0 ][ 0 ] = u[t_next][ 1 ][ y ][ 0 ][N_Z];
+            u[t_next][N_X+1][ y ][ 1 ][ 0 ] = u[t_next][ 1 ][ y ][ 1 ][N_Z];
+            u[t_next][N_X+1][ y ][ 2 ][ 0 ] = u[t_next][ 1 ][ y ][ 2 ][N_Z];
         }
         
         // lines z: 4
@@ -1186,27 +1189,27 @@ int main( int argc, char *argv[] )
         {
             // (0, 0, z) 
             p[t_next][ 0 ][ 0 ][ z ] = p[t_next][N_X][N_Y][ z ];
-            u[t_next][ 0 ][ 0 ][ z ][ 0 ] = u[t_next][N_X][N_Y][ z ][ 0 ];
-            u[t_next][ 0 ][ 0 ][ z ][ 1 ] = u[t_next][N_X][N_Y][ z ][ 1 ];
-            u[t_next][ 0 ][ 0 ][ z ][ 2 ] = u[t_next][N_X][N_Y][ z ][ 2 ];
+            u[t_next][ 0 ][ 0 ][ 0 ][ z ] = u[t_next][N_X][N_Y][ 0 ][ z ];
+            u[t_next][ 0 ][ 0 ][ 1 ][ z ] = u[t_next][N_X][N_Y][ 1 ][ z ];
+            u[t_next][ 0 ][ 0 ][ 2 ][ z ] = u[t_next][N_X][N_Y][ 2 ][ z ];
           
             // (N_X+1, N_Y+1, z)
             p[t_next][N_X+1][N_Y+1][ z ] = p[t_next][ 1 ][ 1 ][ z ];
-            u[t_next][N_X+1][N_Y+1][ z ][ 0 ] = u[t_next][ 1 ][ 1 ][ z ][ 0 ];
-            u[t_next][N_X+1][N_Y+1][ z ][ 1 ] = u[t_next][ 1 ][ 1 ][ z ][ 1 ];
-            u[t_next][N_X+1][N_Y+1][ z ][ 2 ] = u[t_next][ 1 ][ 1 ][ z ][ 2 ];
+            u[t_next][N_X+1][N_Y+1][ 0 ][ z ] = u[t_next][ 1 ][ 1 ][ 0 ][ z ];
+            u[t_next][N_X+1][N_Y+1][ 1 ][ z ] = u[t_next][ 1 ][ 1 ][ 1 ][ z ];
+            u[t_next][N_X+1][N_Y+1][ 1 ][ z ] = u[t_next][ 1 ][ 1 ][ 2 ][ z ];
           
             // (0, N_Y+1, z)
             p[t_next][ 0 ][N_Y+1][ z ] = p[t_next][N_X][ 1 ][ z ];
-            u[t_next][ 0 ][N_Y+1][ z ][ 0 ] = u[t_next][N_X][ 1 ][ z ][ 0 ];
-            u[t_next][ 0 ][N_Y+1][ z ][ 1 ] = u[t_next][N_X][ 1 ][ z ][ 1 ];
-            u[t_next][ 0 ][N_Y+1][ z ][ 2 ] = u[t_next][N_X][ 1 ][ z ][ 2 ];
+            u[t_next][ 0 ][N_Y+1][ 0 ][ z ] = u[t_next][N_X][ 1 ][ 0 ][ z ];
+            u[t_next][ 0 ][N_Y+1][ 1 ][ z ] = u[t_next][N_X][ 1 ][ 1 ][ z ];
+            u[t_next][ 0 ][N_Y+1][ 2 ][ z ] = u[t_next][N_X][ 1 ][ 2 ][ z ];
           
             // (N_X+1, 0, z)
             p[t_next][N_X+1][ 0 ][ z ] = p[t_next][ 1 ][N_Y][ z ];
-            u[t_next][N_X+1][ 0 ][ z ][ 0 ] = u[t_next][ 1 ][N_Y][ z ][ 0 ];
-            u[t_next][N_X+1][ 0 ][ z ][ 1 ] = u[t_next][ 1 ][N_Y][ z ][ 1 ];
-            u[t_next][N_X+1][ 0 ][ z ][ 2 ] = u[t_next][ 1 ][N_Y][ z ][ 2 ];
+            u[t_next][N_X+1][ 0 ][ 0 ][ z ] = u[t_next][ 1 ][N_Y][ 0 ][ z ];
+            u[t_next][N_X+1][ 0 ][ 1 ][ z ] = u[t_next][ 1 ][N_Y][ 1 ][ z ];
+            u[t_next][N_X+1][ 0 ][ 2 ][ z ] = u[t_next][ 1 ][N_Y][ 2 ][ z ];
         }
         
         //######################################################## end ############################################################
