@@ -1,4 +1,4 @@
-/*  v 0.4
+/*  v 0.7
  *  Link-wise Artificial Compressibility Method
  *  by Yifan Yang with supervisor Thomas Zeiser @ FAU
  *                                             01.12.2014
@@ -93,23 +93,7 @@ double ****p = NULL;
 double *****u = NULL;
 
 
-// array to store f
-double f[19]     = { 0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0 };
 
-
-// intermediate variables for calculating f[]
-double u_xi = 0;    // u(x-xi) * xi
-double u_x_xi = 0;  // u(x) * xi
-double u_2 = 0;     // u square
-
-double f_e = 0;     // f(e)
-double f_e_o = 0;   // f(e, o)(x-xi_alpha, t)
-double f_x_t = 0;   // f(e, o)(x, t)
-
-
-// for load p and u in alpha callback function
-double p_load = 0;
-double u_load[3] = {0, 0, 0};
 
 // this is a debug function
 void sum_up_p()
@@ -157,537 +141,529 @@ void progress_bar()
 }
 
 // call back functions to calculate f for each alpha from 0 to 18
-void alpha_0_call()
-{      
-      // alpha = 0 calculate u * xi and u square  xi(0)  {  0,  0,  0, }
-      
-      //load p(x-xia) and u(x-xia)
-      p_load = p[t_now][x][y][z];
-      
-      u_load[0] = u[t_now][x][y][0][z];
-      u_load[1] = u[t_now][x][y][1][z];
-      u_load[2] = u[t_now][x][y][2][z];
-      
-      u_xi = 0;
-      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = 0;
-      
-      //  the follwoing code can be abbreviated
-      // step 5, compute f(e)(x-xi[0], t)   
-      f_e = 1.0/3.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
-      
-      // step 6, compute f(e, o)(x-xi[0], t)
-      f_e_o = 3.0 * 1.0/3.0 * p_load * u_xi;  // Eq.10
-      
-      // step 8.5, compute f(e, o)(x, t)
-      f_x_t = 3.0 * 1.0/3.0 * p[t_now][x][y][z] * u_x_xi;
-      
-      // step 9
-      f[0] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
-}
-
-void alpha_1_call()
+void lattice_update()
 {
-      // alpha = 1 calculate u * xi and u square  xi(1)  {  1,  0,  0, }
-      
-      //load p(x-xia) and u(x-xia)
-      p_load = p[t_now][x-1][y][z];
-      
-      u_load[0] = u[t_now][x-1][y][0][z];
-      u_load[1] = u[t_now][x-1][y][1][z];
-      u_load[2] = u[t_now][x-1][y][2][z];
-      
-      u_xi = u_load[0];
-      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][0][z];
-      
-      // step 5, compute f(e)(x-xi[0], t)
-      f_e = 1.0/18.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
-      
-      // step 6, compute f(e, o)(x-xi[0], t)
-      f_e_o = 3.0 * 1.0/18.0 * p_load * u_xi;  // Eq.10
-      
-      // step 8.5, compute f(e, o)(x, t)
-      f_x_t = 3.0 * 1.0/18.0 * p[t_now][x][y][z] * u_x_xi;
-      
-      // step 9, compute f(x, t+1)
-      f[1] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
-}
-
-void alpha_2_call()
-{
-      // alpha = 0 calculate u * xi and u square  xi(2)  { -1,  0,  0, }
-      
-      //load p(x-xia) and u(x-xia)
-      p_load = p[t_now][x+1][y][z];
-      
-      u_load[0] = u[t_now][x+1][y][0][z];
-      u_load[1] = u[t_now][x+1][y][1][z];
-      u_load[2] = u[t_now][x+1][y][2][z];
-      
-      u_xi = u_load[0]*(-1);
-      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][0][z] * (-1);
-      
-      // step 5, compute f(e)(x-xi[0], t)   
-      f_e = 1.0/18.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
-      
-      // step 6, compute f(e, o)(x-xi[0], t)
-      f_e_o = 3.0 * 1.0/18.0 * p_load * u_xi;  // Eq.10
-      
-      // step 8.5, compute f(e, o)(x, t)
-      f_x_t = 3.0 * 1.0/18.0 * p[t_now][x][y][z] * u_x_xi;
-      
-      // step 9, compute f(x, t+1)
-      f[2] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
-}
-
-void alpha_3_call()
-{
-      // alpha = 0 calculate u * xi and u square  xi(3)  {  0,  1,  0, }
-      
-      //load p(x-xia) and u(x-xia)
-      p_load = p[t_now][x][y-1][z];
-      
-      u_load[0] = u[t_now][x][y-1][0][z];
-      u_load[1] = u[t_now][x][y-1][1][z];
-      u_load[2] = u[t_now][x][y-1][2][z];
-      
-      u_xi = u_load[1];
-      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][1][z];
-      
-      // step 5, compute f(e)(x-xi[0], t)
-      f_e = 1.0/18.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
-      
-      // step 6, compute f(e, o)(x-xi[0], t)
-      f_e_o = 3.0 * 1.0/18.0 * p_load * u_xi;  // Eq.10
-      
-      // step 8.5, compute f(e, o)(x, t)
-      f_x_t = 3.0 * 1.0/18.0 * p[t_now][x][y][z] * u_x_xi;
-      
-      // step 9, compute f(x, t+1)
-      f[3] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
-}
-
-void alpha_4_call()
-{
-      // alpha = 0 calculate u * xi and u square  xi(4)  {  0, -1,  0, }
-      
-      //load p(x-xia) and u(x-xia)
-      p_load = p[t_now][x][y+1][z];
-      
-      u_load[0] = u[t_now][x][y+1][0][z];
-      u_load[1] = u[t_now][x][y+1][1][z];
-      u_load[2] = u[t_now][x][y+1][2][z];
-      
-      u_xi = u_load[1]*(-1);
-      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][1][z] * (-1);
-      
-      // step 5, compute f(e)(x-xi[0], t)   
-      f_e = 1.0/18.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
-      
-      // step 6, compute f(e, o)(x-xi[0], t)
-      f_e_o = 3.0 * 1.0/18.0 * p_load * u_xi;  // Eq.10
-      
-      // step 8.5, compute f(e, o)(x, t)
-      f_x_t = 3.0 * 1.0/18.0 * p[t_now][x][y][z] * u_x_xi;
-      
-      // step 9, compute f(x, t+1)
-      f[4] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
-}
-
-void alpha_5_call()
-{
-      // alpha = 0 calculate u * xi and u square  xi(5)  {  0,  0,  1, }
-            
-      //load p(x-xia) and u(x-xia)
-      p_load = p[t_now][x][y][z-1];
-      
-      u_load[0] = u[t_now][x][y][0][z-1];
-      u_load[1] = u[t_now][x][y][1][z-1];
-      u_load[2] = u[t_now][x][y][2][z-1];
-      
-      u_xi = u_load[2];
-      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][2][z];
-      
-      // step 5, compute f(e)(x-xi[0], t)
-      f_e = 1.0/18.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
-      
-      // step 6, compute f(e, o)(x-xi[0], t)
-      f_e_o = 3.0 * 1.0/18.0 * p_load * u_xi;  // Eq.10
-      
-      // step 8.5, compute f(e, o)(x, t)
-      f_x_t = 3.0 * 1.0/18.0 * p[t_now][x][y][z] * u_x_xi;
-      
-      // step 9, compute f(x, t+1)
-      f[5] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
-}
-
-void alpha_6_call()
-{
-      // alpha = 0 calculate u * xi and u square  xi(6)  {  0,  0, -1, }
-      
-      //load p(x-xia) and u(x-xia)
-      p_load = p[t_now][x][y][z+1];
-      
-      u_load[0] = u[t_now][x][y][0][z+1];
-      u_load[1] = u[t_now][x][y][1][z+1];
-      u_load[2] = u[t_now][x][y][2][z+1];
-      
-      u_xi = u_load[2]*(-1);
-      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][2][z] * (-1);
-      
-      // step 5, compute f(e)(x-xi[0], t)   
-      f_e = 1.0/18.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
-      
-      // step 6, compute f(e, o)(x-xi[0], t)
-      f_e_o = 3.0 * 1.0/18.0 * p_load * u_xi;  // Eq.10
-      
-      // step 8.5, compute f(e, o)(x, t)
-      f_x_t = 3.0 * 1.0/18.0 * p[t_now][x][y][z] * u_x_xi;
-      
-      // step 9, compute f(x, t+1)
-      f[6] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
-}
-
-void alpha_7_call()
-{
-      // alpha = 0 calculate u * xi and u square  xi(7)  {  1,  1,  0, }
-      
-      //load p(x-xia) and u(x-xia)
-      p_load = p[t_now][x-1][y-1][z];
-      
-      u_load[0] = u[t_now][x-1][y-1][0][z];
-      u_load[1] = u[t_now][x-1][y-1][1][z];
-      u_load[2] = u[t_now][x-1][y-1][2][z];
-      
-      u_xi = u_load[0] + u_load[1];
-      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][0][z] + u[t_now][x][y][1][z];
-      
-      // step 5, compute f(e)(x-xi[0], t)
-      f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
-      
-      // step 6, compute f(e, o)(x-xi[0], t)
-      f_e_o = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
-      
-      // step 8.5, compute f(e, o)(x, t)
-      f_x_t = 3.0 * 1.0/36.0 * p[t_now][x][y][z] * u_x_xi;
-      
-      // step 9, compute f(x, t+1)
-      f[7] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
-}
-
-void alpha_8_call()
-{
-      // alpha = 0 calculate u * xi and u square  xi(8)  { -1,  1,  0, }
-      
-      //load p(x-xia) and u(x-xia)
-      p_load = p[t_now][x+1][y-1][z];
-      
-      u_load[0] = u[t_now][x+1][y-1][0][z];
-      u_load[1] = u[t_now][x+1][y-1][1][z];
-      u_load[2] = u[t_now][x+1][y-1][2][z];
-      
-      u_xi = u_load[0]*(-1) + u_load[1];
-      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][0][z] * (-1) + u[t_now][x][y][1][z];
-      
-      // step 5, compute f(e)(x-xi[0], t)   
-      f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
-      
-      // step 6, compute f(e, o)(x-xi[0], t)
-      f_e_o = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
-      
-      // step 8.5, compute f(e, o)(x, t)
-      f_x_t = 3.0 * 1.0/36.0 * p[t_now][x][y][z] * u_x_xi;
-      
-      // step 9, compute f(x, t+1)
-      f[8] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
-}
-
-void alpha_9_call()
-{
-      // alpha = 0 calculate u * xi and u square  xi(9)  {  1, -1,  0, }
-      
-      //load p(x-xia) and u(x-xia)
-      p_load = p[t_now][x-1][y+1][z];
-      
-      u_load[0] = u[t_now][x-1][y+1][0][z];
-      u_load[1] = u[t_now][x-1][y+1][1][z];
-      u_load[2] = u[t_now][x-1][y+1][2][z];
-      
-      u_xi = u_load[0] + u_load[1]*(-1);
-      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][0][z] + u[t_now][x][y][1][z] * (-1);
-      
-      // step 5, compute f(e)(x-xi[0], t)
-      f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
-      
-      // step 6, compute f(e, o)(x-xi[0], t)
-      f_e_o = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
-      
-      // step 8.5, compute f(e, o)(x, t)
-      f_x_t = 3.0 * 1.0/36.0 * p[t_now][x][y][z] * u_x_xi;
-      
-      // step 9, compute f(x, t+1)
-      f[9] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
-}
-
-void alpha_10_call()
-{
-      // alpha = 0 calculate u * xi and u square  xi(10) { -1, -1,  0, }
-      
-      //load p(x-xia) and u(x-xia)
-      p_load = p[t_now][x+1][y+1][z];
-      
-      u_load[0] = u[t_now][x+1][y+1][0][z];
-      u_load[1] = u[t_now][x+1][y+1][1][z];
-      u_load[2] = u[t_now][x+1][y+1][2][z];
-      
-      u_xi = u_load[0]*(-1) + u_load[1]*(-1);
-      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][0][z] * (-1) + u[t_now][x][y][1][z] * (-1);
-      
-      // step 5, compute f(e)(x-xi[0], t)   
-      f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
-      
-      // step 6, compute f(e, o)(x-xi[0], t)
-      f_e_o = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
-      
-      // step 8.5, compute f(e, o)(x, t)
-      f_x_t = 3.0 * 1.0/36.0 * p[t_now][x][y][z] * u_x_xi;
-      
-      // step 9, compute f(x, t+1)
-      f[10] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
-}
-
-void alpha_11_call()
-{
-      // alpha = 0 calculate u * xi and u square  xi(11) {  1,  0,  1, }
-      
-      //load p(x-xia) and u(x-xia)
-      p_load = p[t_now][x-1][y][z-1];
-      
-      u_load[0] = u[t_now][x-1][y][0][z-1];
-      u_load[1] = u[t_now][x-1][y][1][z-1];
-      u_load[2] = u[t_now][x-1][y][2][z-1];
-      
-      u_xi = u_load[0] + u_load[2];
-      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][0][z] + u[t_now][x][y][2][z];
-      
-      // step 5, compute f(e)(x-xi[0], t)
-      f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
-      
-      // step 6, compute f(e, o)(x-xi[0], t)
-      f_e_o = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
-      
-      // step 8.5, compute f(e, o)(x, t)
-      f_x_t = 3.0 * 1.0/36.0 * p[t_now][x][y][z] * u_x_xi;
-      
-      // step 9, compute f(x, t+1)
-      f[11] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
-}
-
-void alpha_12_call()
-{
-      // alpha = 0 calculate u * xi and u square  xi(12) { -1,  0,  1, }
-      
-      //load p(x-xia) and u(x-xia)
-      p_load = p[t_now][x+1][y][z-1];
-      
-      u_load[0] = u[t_now][x+1][y][0][z-1];
-      u_load[1] = u[t_now][x+1][y][1][z-1];
-      u_load[2] = u[t_now][x+1][y][2][z-1];
-      
-      u_xi = u_load[0]*(-1) + u_load[2];
-      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][0][z] * (-1) + u[t_now][x][y][2][z];
-      
-      // step 5, compute f(e)(x-xi[0], t)   
-      f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
-      
-      // step 6, compute f(e, o)(x-xi[0], t)
-      f_e_o = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
-      
-      // step 8.5, compute f(e, o)(x, t)
-      f_x_t = 3.0 * 1.0/36.0 * p[t_now][x][y][z] * u_x_xi;
-      
-      // step 9, compute f(x, t+1)
-      f[12] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
-}
-
-void alpha_13_call()
-{
-      // alpha = 0 calculate u * xi and u square  xi(13) {  1,  0, -1, }
-      
-      //load p(x-xia) and u(x-xia)
-      p_load = p[t_now][x-1][y][z+1];
-      
-      u_load[0] = u[t_now][x-1][y][0][z+1];
-      u_load[1] = u[t_now][x-1][y][1][z+1];
-      u_load[2] = u[t_now][x-1][y][2][z+1];
-      
-      u_xi = u_load[0] + u_load[2]*(-1);
-      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][0][z] + u[t_now][x][y][2][z] * (-1);
-      
-      // step 5, compute f(e)(x-xi[0], t)
-      f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
-      
-      // step 6, compute f(e, o)(x-xi[0], t)
-      f_e_o = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
-      
-      // step 8.5, compute f(e, o)(x, t)
-      f_x_t = 3.0 * 1.0/36.0 * p[t_now][x][y][z] * u_x_xi;
-      
-      // step 9, compute f(x, t+1)
-      f[13] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
-}
-
-void alpha_14_call()
-{
-      // alpha = 0 calculate u * xi and u square  xi(14) { -1,  0, -1, }
-      
-      //load p(x-xia) and u(x-xia)
-      p_load = p[t_now][x+1][y][z+1];
-      
-      u_load[0] = u[t_now][x+1][y][0][z+1];
-      u_load[1] = u[t_now][x+1][y][1][z+1];
-      u_load[2] = u[t_now][x+1][y][2][z+1];
-      
-      u_xi = u_load[0]*(-1) + u_load[2]*(-1);
-      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][0][z] * (-1) + u[t_now][x][y][2][z] * (-1);
-      
-      // step 5, compute f(e)(x-xi[0], t)   
-      f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
-      
-      // step 6, compute f(e, o)(x-xi[0], t)
-      f_e_o = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
-      
-      // step 8.5, compute f(e, o)(x, t)
-      f_x_t = 3.0 * 1.0/36.0 * p[t_now][x][y][z] * u_x_xi;
-      
-      // step 9, compute f(x, t+1)
-      f[14] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
-}
-
-void alpha_15_call()
-{
-      // alpha = 0 calculate u * xi and u square  xi(15) {  0,  1,  1, }
-      
-      //load p(x-xia) and u(x-xia)
-      p_load = p[t_now][x][y-1][z-1];
-      
-      u_load[0] = u[t_now][x][y-1][0][z-1];
-      u_load[1] = u[t_now][x][y-1][1][z-1];
-      u_load[2] = u[t_now][x][y-1][2][z-1];
-      
-      u_xi = u_load[1] + u_load[2];
-      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][1][z] + u[t_now][x][y][2][z];
-      
-      // step 5, compute f(e)(x-xi[0], t)
-      f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
-      
-      // step 6, compute f(e, o)(x-xi[0], t)
-      f_e_o = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
-      
-      // step 8.5, compute f(e, o)(x, t)
-      f_x_t = 3.0 * 1.0/36.0 * p[t_now][x][y][z] * u_x_xi;
-      
-      // step 9, compute f(x, t+1)
-      f[15] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
-}
-
-void alpha_16_call()
-{
-      // alpha = 0 calculate u * xi and u square  xi(16) {  0, -1,  1, }
-      
-      //load p(x-xia) and u(x-xia)
-      p_load = p[t_now][x][y+1][z-1];
-      
-      u_load[0] = u[t_now][x][y+1][0][z-1];
-      u_load[1] = u[t_now][x][y+1][1][z-1];
-      u_load[2] = u[t_now][x][y+1][2][z-1];
-      
-      u_xi = u_load[1]*(-1) + u_load[2];
-      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][1][z] * (-1) + u[t_now][x][y][2][z];
-      
-      // step 5, compute f(e)(x-xi[0], t)   
-      f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
-      
-      // step 6, compute f(e, o)(x-xi[0], t)
-      f_e_o = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
-      
-      // step 8.5, compute f(e, o)(x, t)
-      f_x_t = 3.0 * 1.0/36.0 * p[t_now][x][y][z] * u_x_xi;
-      
-      // step 9, compute f(x, t+1)
-      f[16] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
-}
-
-void alpha_17_call()
-{
-      // alpha = 0 calculate u * xi and u square  xi(17) {  0,  1, -1, }
-      
-      //load p(x-xia) and u(x-xia)
-      p_load = p[t_now][x][y-1][z+1];
-      
-      u_load[0] = u[t_now][x][y-1][0][z+1];
-      u_load[1] = u[t_now][x][y-1][1][z+1];
-      u_load[2] = u[t_now][x][y-1][2][z+1];
-      
-      u_xi = u_load[1] + u_load[2] * (-1);
-      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][1][z] + u[t_now][x][y][2][z] * (-1);
-      
-      // step 5, compute f(e)(x-xi[0], t)
-      f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
-      
-      // step 6, compute f(e, o)(x-xi[0], t)
-      f_e_o = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
-      
-      // step 8.5, compute f(e, o)(x, t)
-      f_x_t = 3.0 * 1.0/36.0 * p[t_now][x][y][z] * u_x_xi;
-      
-      // step 9, compute f(x, t+1)
-      f[17] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
-}
-
-void alpha_18_call()
-{
-      // alpha = 0 calculate u * xi and u square  xi(18) {  0, -1, -1, }
-      
-      //load p(x-xia) and u(x-xia)
-      p_load = p[t_now][x][y+1][z+1];
-      
-      u_load[0] = u[t_now][x][y+1][0][z+1];
-      u_load[1] = u[t_now][x][y+1][1][z+1];
-      u_load[2] = u[t_now][x][y+1][2][z+1];
-      
-      u_xi = u_load[1] * (-1) + u_load[2] * (-1);
-      u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
-      u_x_xi = u[t_now][x][y][1][z] * (-1) + u[t_now][x][y][2][z] * (-1);
-      
-      // step 5, compute f(e)(x-xi[0], t)   
-      f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
-      
-      // step 6, compute f(e, o)(x-xi[0], t)
-      f_e_o = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
-      
-      // step 8.5, compute f(e, o)(x, t)
-      f_x_t = 3.0 * 1.0/36.0 * p[t_now][x][y][z] * u_x_xi;
-      
-      // step 9, compute f(x, t+1)
-      f[18] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
+    // put all temp variable locally to speed up process
+    int x = 0;
+    int y = 0;
+    int z = 0;
+    
+    // array to store f
+    double f[19] = { 0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0 };
+    
+    // intermediate variables for calculating f[]
+    double u_xi = 0;    // u(x-xi) * xi
+    double u_x_xi = 0;  // u(x) * xi
+    double u_2 = 0;     // u square
+    
+    double f_e = 0;     // f(e)
+    double f_e_o = 0;   // f(e, o)(x-xi_alpha, t)
+    double f_x_t = 0;   // f(e, o)(x, t)
+    
+    // for load p and u
+    double p_load = 0;
+    double u_load[3] = {0, 0, 0};
+    
+    // for all alpha from 0 to 18, calculate f[] for each node and then calculate p[] and u[]        
+    for( x = 1; x < N_X+1; x++)
+    {
+      for( y = 1; y < N_Y+1; y++)
+      {
+      
+        //#pragma ivdep
+        for( z = 1; z < N_Z+1; z++)
+        {
+        
+// >> alpha = 0 calculate u * xi and u square  xi(0)  {  0,  0,  0, }
+          
+          //load p(x-xia) and u(x-xia)
+          p_load = p[t_now][x][y][z];
+          
+          u_load[0] = u[t_now][x][y][0][z];
+          u_load[1] = u[t_now][x][y][1][z];
+          u_load[2] = u[t_now][x][y][2][z];
+          
+          u_xi = 0;
+          u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+          u_x_xi = 0;
+          
+          //  the follwoing code can be abbreviated
+          // step 5, compute f(e)(x-xi[0], t)   
+          f_e = 1.0/3.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+          
+          // step 6, compute f(e, o)(x-xi[0], t)
+          f_e_o = 3.0 * 1.0/3.0 * p_load * u_xi;  // Eq.10
+          
+          // step 8.5, compute f(e, o)(x, t)
+          f_x_t = 3.0 * 1.0/3.0 * p[t_now][x][y][z] * u_x_xi;
+          
+          // step 9
+          f[0] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
+          
+// >> alpha = 1 calculate u * xi and u square  xi(1)  {  1,  0,  0, }
+          
+          //load p(x-xia) and u(x-xia)
+          p_load = p[t_now][x-1][y][z];
+          
+          u_load[0] = u[t_now][x-1][y][0][z];
+          u_load[1] = u[t_now][x-1][y][1][z];
+          u_load[2] = u[t_now][x-1][y][2][z];
+          
+          u_xi = u_load[0];
+          u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+          u_x_xi = u[t_now][x][y][0][z];
+          
+          // step 5, compute f(e)(x-xi[0], t)
+          f_e = 1.0/18.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+          
+          // step 6, compute f(e, o)(x-xi[0], t)
+          f_e_o = 3.0 * 1.0/18.0 * p_load * u_xi;  // Eq.10
+          
+          // step 8.5, compute f(e, o)(x, t)
+          f_x_t = 3.0 * 1.0/18.0 * p[t_now][x][y][z] * u_x_xi;
+          
+          // step 9, compute f(x, t+1)
+          f[1] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
+          
+// >> alpha = 2 calculate u * xi and u square  xi(2)  { -1,  0,  0, }
+          
+          //load p(x-xia) and u(x-xia)
+          p_load = p[t_now][x+1][y][z];
+          
+          u_load[0] = u[t_now][x+1][y][0][z];
+          u_load[1] = u[t_now][x+1][y][1][z];
+          u_load[2] = u[t_now][x+1][y][2][z];
+          
+          u_xi = u_load[0]*(-1);
+          u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+          u_x_xi = u[t_now][x][y][0][z] * (-1);
+          
+          // step 5, compute f(e)(x-xi[0], t)   
+          f_e = 1.0/18.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+          
+          // step 6, compute f(e, o)(x-xi[0], t)
+          f_e_o = 3.0 * 1.0/18.0 * p_load * u_xi;  // Eq.10
+          
+          // step 8.5, compute f(e, o)(x, t)
+          f_x_t = 3.0 * 1.0/18.0 * p[t_now][x][y][z] * u_x_xi;
+          
+          // step 9, compute f(x, t+1)
+          f[2] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
+          
+// >> alpha = 3 calculate u * xi and u square  xi(3)  {  0,  1,  0, }
+          
+          //load p(x-xia) and u(x-xia)
+          p_load = p[t_now][x][y-1][z];
+          
+          u_load[0] = u[t_now][x][y-1][0][z];
+          u_load[1] = u[t_now][x][y-1][1][z];
+          u_load[2] = u[t_now][x][y-1][2][z];
+          
+          u_xi = u_load[1];
+          u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+          u_x_xi = u[t_now][x][y][1][z];
+          
+          // step 5, compute f(e)(x-xi[0], t)
+          f_e = 1.0/18.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+          
+          // step 6, compute f(e, o)(x-xi[0], t)
+          f_e_o = 3.0 * 1.0/18.0 * p_load * u_xi;  // Eq.10
+          
+          // step 8.5, compute f(e, o)(x, t)
+          f_x_t = 3.0 * 1.0/18.0 * p[t_now][x][y][z] * u_x_xi;
+          
+          // step 9, compute f(x, t+1)
+          f[3] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
+          
+// >> alpha = 4 calculate u * xi and u square  xi(4)  {  0, -1,  0, }
+          
+          //load p(x-xia) and u(x-xia)
+          p_load = p[t_now][x][y+1][z];
+          
+          u_load[0] = u[t_now][x][y+1][0][z];
+          u_load[1] = u[t_now][x][y+1][1][z];
+          u_load[2] = u[t_now][x][y+1][2][z];
+          
+          u_xi = u_load[1]*(-1);
+          u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+          u_x_xi = u[t_now][x][y][1][z] * (-1);
+          
+          // step 5, compute f(e)(x-xi[0], t)   
+          f_e = 1.0/18.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+          
+          // step 6, compute f(e, o)(x-xi[0], t)
+          f_e_o = 3.0 * 1.0/18.0 * p_load * u_xi;  // Eq.10
+          
+          // step 8.5, compute f(e, o)(x, t)
+          f_x_t = 3.0 * 1.0/18.0 * p[t_now][x][y][z] * u_x_xi;
+          
+          // step 9, compute f(x, t+1)
+          f[4] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
+          
+// >> alpha = 5 calculate u * xi and u square  xi(5)  {  0,  0,  1, }
+          
+          //load p(x-xia) and u(x-xia)
+          p_load = p[t_now][x][y][z-1];
+          
+          u_load[0] = u[t_now][x][y][0][z-1];
+          u_load[1] = u[t_now][x][y][1][z-1];
+          u_load[2] = u[t_now][x][y][2][z-1];
+          
+          u_xi = u_load[2];
+          u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+          u_x_xi = u[t_now][x][y][2][z];
+          
+          // step 5, compute f(e)(x-xi[0], t)
+          f_e = 1.0/18.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+          
+          // step 6, compute f(e, o)(x-xi[0], t)
+          f_e_o = 3.0 * 1.0/18.0 * p_load * u_xi;  // Eq.10
+          
+          // step 8.5, compute f(e, o)(x, t)
+          f_x_t = 3.0 * 1.0/18.0 * p[t_now][x][y][z] * u_x_xi;
+          
+          // step 9, compute f(x, t+1)
+          f[5] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
+          
+// >> alpha = 6 calculate u * xi and u square  xi(6)  {  0,  0, -1, }
+          
+          //load p(x-xia) and u(x-xia)
+          p_load = p[t_now][x][y][z+1];
+          
+          u_load[0] = u[t_now][x][y][0][z+1];
+          u_load[1] = u[t_now][x][y][1][z+1];
+          u_load[2] = u[t_now][x][y][2][z+1];
+          
+          u_xi = u_load[2]*(-1);
+          u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+          u_x_xi = u[t_now][x][y][2][z] * (-1);
+          
+          // step 5, compute f(e)(x-xi[0], t)   
+          f_e = 1.0/18.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+          
+          // step 6, compute f(e, o)(x-xi[0], t)
+          f_e_o = 3.0 * 1.0/18.0 * p_load * u_xi;  // Eq.10
+          
+          // step 8.5, compute f(e, o)(x, t)
+          f_x_t = 3.0 * 1.0/18.0 * p[t_now][x][y][z] * u_x_xi;
+          
+          // step 9, compute f(x, t+1)
+          f[6] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
+          
+// >> alpha = 7 calculate u * xi and u square  xi(7)  {  1,  1,  0, }
+          
+          //load p(x-xia) and u(x-xia)
+          p_load = p[t_now][x-1][y-1][z];
+          
+          u_load[0] = u[t_now][x-1][y-1][0][z];
+          u_load[1] = u[t_now][x-1][y-1][1][z];
+          u_load[2] = u[t_now][x-1][y-1][2][z];
+          
+          u_xi = u_load[0] + u_load[1];
+          u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+          u_x_xi = u[t_now][x][y][0][z] + u[t_now][x][y][1][z];
+          
+          // step 5, compute f(e)(x-xi[0], t)
+          f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+          
+          // step 6, compute f(e, o)(x-xi[0], t)
+          f_e_o = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
+          
+          // step 8.5, compute f(e, o)(x, t)
+          f_x_t = 3.0 * 1.0/36.0 * p[t_now][x][y][z] * u_x_xi;
+          
+          // step 9, compute f(x, t+1)
+          f[7] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
+          
+// >> alpha = 8 calculate u * xi and u square  xi(8)  { -1,  1,  0, }
+          
+          //load p(x-xia) and u(x-xia)
+          p_load = p[t_now][x+1][y-1][z];
+          
+          u_load[0] = u[t_now][x+1][y-1][0][z];
+          u_load[1] = u[t_now][x+1][y-1][1][z];
+          u_load[2] = u[t_now][x+1][y-1][2][z];
+          
+          u_xi = u_load[0]*(-1) + u_load[1];
+          u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+          u_x_xi = u[t_now][x][y][0][z] * (-1) + u[t_now][x][y][1][z];
+          
+          // step 5, compute f(e)(x-xi[0], t)   
+          f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+          
+          // step 6, compute f(e, o)(x-xi[0], t)
+          f_e_o = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
+          
+          // step 8.5, compute f(e, o)(x, t)
+          f_x_t = 3.0 * 1.0/36.0 * p[t_now][x][y][z] * u_x_xi;
+          
+          // step 9, compute f(x, t+1)
+          f[8] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
+          
+// >> alpha = 9 calculate u * xi and u square  xi(9)  {  1, -1,  0, }
+          
+          //load p(x-xia) and u(x-xia)
+          p_load = p[t_now][x-1][y+1][z];
+          
+          u_load[0] = u[t_now][x-1][y+1][0][z];
+          u_load[1] = u[t_now][x-1][y+1][1][z];
+          u_load[2] = u[t_now][x-1][y+1][2][z];
+          
+          u_xi = u_load[0] + u_load[1]*(-1);
+          u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+          u_x_xi = u[t_now][x][y][0][z] + u[t_now][x][y][1][z] * (-1);
+          
+          // step 5, compute f(e)(x-xi[0], t)
+          f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+          
+          // step 6, compute f(e, o)(x-xi[0], t)
+          f_e_o = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
+          
+          // step 8.5, compute f(e, o)(x, t)
+          f_x_t = 3.0 * 1.0/36.0 * p[t_now][x][y][z] * u_x_xi;
+          
+          // step 9, compute f(x, t+1)
+          f[9] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
+          
+// >> alpha = 10 calculate u * xi and u square  xi(10) { -1, -1,  0, }
+          
+          //load p(x-xia) and u(x-xia)
+          p_load = p[t_now][x+1][y+1][z];
+          
+          u_load[0] = u[t_now][x+1][y+1][0][z];
+          u_load[1] = u[t_now][x+1][y+1][1][z];
+          u_load[2] = u[t_now][x+1][y+1][2][z];
+          
+          u_xi = u_load[0]*(-1) + u_load[1]*(-1);
+          u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+          u_x_xi = u[t_now][x][y][0][z] * (-1) + u[t_now][x][y][1][z] * (-1);
+          
+          // step 5, compute f(e)(x-xi[0], t)   
+          f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+          
+          // step 6, compute f(e, o)(x-xi[0], t)
+          f_e_o = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
+          
+          // step 8.5, compute f(e, o)(x, t)
+          f_x_t = 3.0 * 1.0/36.0 * p[t_now][x][y][z] * u_x_xi;
+          
+          // step 9, compute f(x, t+1)
+          f[10] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
+          
+// >> alpha = 11 calculate u * xi and u square  xi(11) {  1,  0,  1, }
+          
+          //load p(x-xia) and u(x-xia)
+          p_load = p[t_now][x-1][y][z-1];
+          
+          u_load[0] = u[t_now][x-1][y][0][z-1];
+          u_load[1] = u[t_now][x-1][y][1][z-1];
+          u_load[2] = u[t_now][x-1][y][2][z-1];
+          
+          u_xi = u_load[0] + u_load[2];
+          u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+          u_x_xi = u[t_now][x][y][0][z] + u[t_now][x][y][2][z];
+          
+          // step 5, compute f(e)(x-xi[0], t)
+          f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+          
+          // step 6, compute f(e, o)(x-xi[0], t)
+          f_e_o = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
+          
+          // step 8.5, compute f(e, o)(x, t)
+          f_x_t = 3.0 * 1.0/36.0 * p[t_now][x][y][z] * u_x_xi;
+          
+          // step 9, compute f(x, t+1)
+          f[11] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
+          
+// >> alpha = 12 calculate u * xi and u square  xi(12) { -1,  0,  1, }
+          
+          //load p(x-xia) and u(x-xia)
+          p_load = p[t_now][x+1][y][z-1];
+          
+          u_load[0] = u[t_now][x+1][y][0][z-1];
+          u_load[1] = u[t_now][x+1][y][1][z-1];
+          u_load[2] = u[t_now][x+1][y][2][z-1];
+          
+          u_xi = u_load[0]*(-1) + u_load[2];
+          u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+          u_x_xi = u[t_now][x][y][0][z] * (-1) + u[t_now][x][y][2][z];
+          
+          // step 5, compute f(e)(x-xi[0], t)   
+          f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+          
+          // step 6, compute f(e, o)(x-xi[0], t)
+          f_e_o = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
+          
+          // step 8.5, compute f(e, o)(x, t)
+          f_x_t = 3.0 * 1.0/36.0 * p[t_now][x][y][z] * u_x_xi;
+          
+          // step 9, compute f(x, t+1)
+          f[12] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
+          
+// >> alpha = 13 calculate u * xi and u square  xi(13) {  1,  0, -1, }
+          
+          //load p(x-xia) and u(x-xia)
+          p_load = p[t_now][x-1][y][z+1];
+          
+          u_load[0] = u[t_now][x-1][y][0][z+1];
+          u_load[1] = u[t_now][x-1][y][1][z+1];
+          u_load[2] = u[t_now][x-1][y][2][z+1];
+          
+          u_xi = u_load[0] + u_load[2]*(-1);
+          u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+          u_x_xi = u[t_now][x][y][0][z] + u[t_now][x][y][2][z] * (-1);
+          
+          // step 5, compute f(e)(x-xi[0], t)
+          f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+          
+          // step 6, compute f(e, o)(x-xi[0], t)
+          f_e_o = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
+          
+          // step 8.5, compute f(e, o)(x, t)
+          f_x_t = 3.0 * 1.0/36.0 * p[t_now][x][y][z] * u_x_xi;
+          
+          // step 9, compute f(x, t+1)
+          f[13] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
+          
+// >> alpha = 14 calculate u * xi and u square  xi(14) { -1,  0, -1, }
+          
+          //load p(x-xia) and u(x-xia)
+          p_load = p[t_now][x+1][y][z+1];
+          
+          u_load[0] = u[t_now][x+1][y][0][z+1];
+          u_load[1] = u[t_now][x+1][y][1][z+1];
+          u_load[2] = u[t_now][x+1][y][2][z+1];
+          
+          u_xi = u_load[0]*(-1) + u_load[2]*(-1);
+          u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+          u_x_xi = u[t_now][x][y][0][z] * (-1) + u[t_now][x][y][2][z] * (-1);
+          
+          // step 5, compute f(e)(x-xi[0], t)   
+          f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+          
+          // step 6, compute f(e, o)(x-xi[0], t)
+          f_e_o = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
+          
+          // step 8.5, compute f(e, o)(x, t)
+          f_x_t = 3.0 * 1.0/36.0 * p[t_now][x][y][z] * u_x_xi;
+          
+          // step 9, compute f(x, t+1)
+          f[14] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
+          
+// >> alpha = 15 calculate u * xi and u square  xi(15) {  0,  1,  1, }
+          
+          //load p(x-xia) and u(x-xia)
+          p_load = p[t_now][x][y-1][z-1];
+          
+          u_load[0] = u[t_now][x][y-1][0][z-1];
+          u_load[1] = u[t_now][x][y-1][1][z-1];
+          u_load[2] = u[t_now][x][y-1][2][z-1];
+          
+          u_xi = u_load[1] + u_load[2];
+          u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+          u_x_xi = u[t_now][x][y][1][z] + u[t_now][x][y][2][z];
+          
+          // step 5, compute f(e)(x-xi[0], t)
+          f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+          
+          // step 6, compute f(e, o)(x-xi[0], t)
+          f_e_o = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
+          
+          // step 8.5, compute f(e, o)(x, t)
+          f_x_t = 3.0 * 1.0/36.0 * p[t_now][x][y][z] * u_x_xi;
+          
+          // step 9, compute f(x, t+1)
+          f[15] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
+          
+// >> alpha = 16 calculate u * xi and u square  xi(16) {  0, -1,  1, }
+          
+          //load p(x-xia) and u(x-xia)
+          p_load = p[t_now][x][y+1][z-1];
+          
+          u_load[0] = u[t_now][x][y+1][0][z-1];
+          u_load[1] = u[t_now][x][y+1][1][z-1];
+          u_load[2] = u[t_now][x][y+1][2][z-1];
+          
+          u_xi = u_load[1]*(-1) + u_load[2];
+          u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+          u_x_xi = u[t_now][x][y][1][z] * (-1) + u[t_now][x][y][2][z];
+          
+          // step 5, compute f(e)(x-xi[0], t)   
+          f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+          
+          // step 6, compute f(e, o)(x-xi[0], t)
+          f_e_o = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
+          
+          // step 8.5, compute f(e, o)(x, t)
+          f_x_t = 3.0 * 1.0/36.0 * p[t_now][x][y][z] * u_x_xi;
+          
+          // step 9, compute f(x, t+1)
+          f[16] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
+          
+// >> alpha = 17 calculate u * xi and u square  xi(17) {  0,  1, -1, }
+          
+          //load p(x-xia) and u(x-xia)
+          p_load = p[t_now][x][y-1][z+1];
+          
+          u_load[0] = u[t_now][x][y-1][0][z+1];
+          u_load[1] = u[t_now][x][y-1][1][z+1];
+          u_load[2] = u[t_now][x][y-1][2][z+1];
+          
+          u_xi = u_load[1] + u_load[2] * (-1);
+          u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+          u_x_xi = u[t_now][x][y][1][z] + u[t_now][x][y][2][z] * (-1);
+          
+          // step 5, compute f(e)(x-xi[0], t)
+          f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+          
+          // step 6, compute f(e, o)(x-xi[0], t)
+          f_e_o = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
+          
+          // step 8.5, compute f(e, o)(x, t)
+          f_x_t = 3.0 * 1.0/36.0 * p[t_now][x][y][z] * u_x_xi;
+          
+          // step 9, compute f(x, t+1)
+          f[17] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
+          
+// >> alpha = 18 calculate u * xi and u square  xi(18) {  0, -1, -1, }
+          
+          //load p(x-xia) and u(x-xia)
+          p_load = p[t_now][x][y+1][z+1];
+          
+          u_load[0] = u[t_now][x][y+1][0][z+1];
+          u_load[1] = u[t_now][x][y+1][1][z+1];
+          u_load[2] = u[t_now][x][y+1][2][z+1];
+          
+          u_xi = u_load[1] * (-1) + u_load[2] * (-1);
+          u_2  = u_load[0] * u_load[0] + u_load[1] * u_load[1] + u_load[2] * u_load[2];
+          u_x_xi = u[t_now][x][y][1][z] * (-1) + u[t_now][x][y][2][z] * (-1);
+          
+          // step 5, compute f(e)(x-xi[0], t)   
+          f_e = 1.0/36.0 * p_load * ( 1 + 3*u_xi + 4.5*u_xi*u_xi - 1.5*u_2 );  // Eq.8
+          
+          // step 6, compute f(e, o)(x-xi[0], t)
+          f_e_o = 3.0 * 1.0/36.0 * p_load * u_xi;  // Eq.10
+          
+          // step 8.5, compute f(e, o)(x, t)
+          f_x_t = 3.0 * 1.0/36.0 * p[t_now][x][y][z] * u_x_xi;
+          
+          // step 9, compute f(x, t+1)
+          f[18] =  f_e + 2*( omega-1/omega )*( f_x_t - f_e_o ) ;  // Eq.11
+          
+          
+          // step 11, compute p(x, t+1)
+          p_load = f[0]+f[1]+f[2]+f[3]+f[4]+f[5]+f[6]+f[7]+f[8]+f[9]+f[10]+f[11]+f[12]+f[13]+f[14]+f[15]+f[16]+f[17]+f[18];
+          p[t_next][x][y][z] = p_load;
+                  
+          // step 12, compute u(x, t+1)
+          u[t_next][x][y][0][z] = ( f[1]-f[2]+f[7]-f[8]+f[9]-f[10]+f[11]-f[12]+f[13]-f[14] )/p_load;
+          u[t_next][x][y][1][z] = ( f[3]-f[4]+f[7]+f[8]-f[9]-f[10]+f[15]-f[16]+f[17]-f[18] )/p_load;
+          u[t_next][x][y][2][z] = ( f[5]-f[6]+f[11]+f[12]-f[13]-f[14]+f[15]+f[16]-f[17]-f[18] )/p_load;
+          
+        } // end of loop Z
+      } // end of loop Y
+    } // end of loop X
+    
 }
 
 void free_array_p()
@@ -1023,57 +999,14 @@ int main( int argc, char *argv[] )
     // for all time step t
     for( t = 0; t < T_MAX; t++)
     {
-        // for all mesh point x, calculate p[t_next][] and u[t_next][]
-        for( x = 1; x < N_X+1; x++)
-        {
-          for( y = 1; y < N_Y+1; y++)
-          {
-            for( z = 1; z < N_Z+1; z++)
-            {
-                // for all alpha from 0 to 18, calculate f[] for each node
-                // test function for alpha
-                //for( a = 0; a < 19; a++)
-                //{
-                //    alpha_call(a);
-                //}
-                
-                alpha_0_call();
-                alpha_1_call();
-                alpha_2_call();
-                alpha_3_call();
-                alpha_4_call();
-                alpha_5_call();
-                alpha_6_call();
-                alpha_7_call();
-                alpha_8_call();
-                alpha_9_call();
-                alpha_10_call();
-                alpha_11_call();
-                alpha_12_call();
-                alpha_13_call();
-                alpha_14_call();
-                alpha_15_call();
-                alpha_16_call();
-                alpha_17_call();
-                alpha_18_call();
-                
-                // step 11, compute p(x, t+1)
-                p_load = f[0]+f[1]+f[2]+f[3]+f[4]+f[5]+f[6]+f[7]+f[8]+f[9]+f[10]+f[11]+f[12]+f[13]+f[14]+f[15]+f[16]+f[17]+f[18];
-                p[t_next][x][y][z] = p_load;
-                
-                // step 12, compute u(x, t+1)
-                u[t_next][x][y][0][z] = ( f[1]-f[2]+f[7]-f[8]+f[9]-f[10]+f[11]-f[12]+f[13]-f[14] )/p_load;
-                u[t_next][x][y][1][z] = ( f[3]-f[4]+f[7]+f[8]-f[9]-f[10]+f[15]-f[16]+f[17]-f[18] )/p_load;
-                u[t_next][x][y][2][z] = ( f[5]-f[6]+f[11]+f[12]-f[13]-f[14]+f[15]+f[16]-f[17]-f[18] )/p_load;
-            }
-          }
-        }
+        // for all mesh point, calculate p[t_next][] and u[t_next][]
+        lattice_update();
         
         //progress_bar();
         //sum_up_p();
         
-        //#########################################################################################################################
-        //##################################################### start #############################################################
+        //######################################################################################################################
+        //##################################################### start ##########################################################
         // explicit peridic boundary conditions
         // surfaces: xy
         for( x = 1; x < N_X+1; x++)
@@ -1212,8 +1145,8 @@ int main( int argc, char *argv[] )
             u[t_next][N_X+1][ 0 ][ 2 ][ z ] = u[t_next][ 1 ][N_Y][ 2 ][ z ];
         }
         
-        //######################################################## end ############################################################
-        //#########################################################################################################################
+        //######################################################## end #########################################################
+        //######################################################################################################################
         
         // toggle t_now and t_next
         t_now  = 1-t_now;

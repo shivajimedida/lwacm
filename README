@@ -19,9 +19,9 @@ ________________________________________________________________________________
    1, lwacm.c : original source code, after the program finishes, the performance date will be 
       written into file 'log', with the format as:
       
-      [nodes_per_dimension]  [domain_size]  [run_time_cpu]  [run_time_wall_clock]  [MLUps_cpu]  [MLUps_wall_clock]
+      [nodes_per_dimension]  [domain_size]  [run_time]  [MLUPS]
       
-      e.g  '300  27000000.000000  39.000000  39.130000  4.830054  4.846154'
+      e.g  '100    1000000.000000    0.455536    2.195216'
       
    2, run.sh : bash script that passes domain size and time step to the program to run the benchmark
    
@@ -45,6 +45,10 @@ ________________________________________________________________________________
 ________________________________________________________________________________________________
 
 change log:
+
+v0.7
+1, optimized data structure for faster execution
+2, use gettimeofday() to mesure execution time
 
 v0.6
 1, use dynamic memory allocation for the array instead of fixed 
